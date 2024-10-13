@@ -4,7 +4,10 @@ use eyre::{Context, Result};
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 
+use crate::pack::VariantUID;
 use crate::BOM;
+
+pub const FILENAME: &str = "manifest.json";
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Manifest {
@@ -15,7 +18,7 @@ pub struct Manifest {
     pub package_version: String,
     pub platform: String,
     pub platform_override: Option<String>,
-    pub variants: IndexMap<String, Variant>,
+    pub variants: IndexMap<VariantUID, Variant>,
 }
 
 impl Manifest {
@@ -32,7 +35,7 @@ impl Manifest {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Variant {
-    display_name: String,
+    pub display_name: String,
     #[serde(default)]
-    flags: Vec<String>,
+    pub flags: Vec<String>,
 }

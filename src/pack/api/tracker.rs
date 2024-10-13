@@ -7,6 +7,7 @@ use eyre::{eyre, Context};
 use mlua::{UserData, UserDataFields, UserDataMethods};
 use serde::{de, Deserialize, Deserializer, Serialize};
 
+use crate::pack::VariantUID;
 use crate::util::value_or_string;
 use crate::BOM;
 
@@ -14,14 +15,16 @@ pub struct Tracker {
     root: PathBuf,
     maps: Vec<Map>,
     locations: Vec<Location>,
+    variant_uid: VariantUID,
 }
 
 impl Tracker {
-    pub fn new(root: impl Into<PathBuf>) -> Self {
+    pub fn new(root: impl Into<PathBuf>, variant_uid: &VariantUID) -> Self {
         Self {
             root: root.into(),
             maps: Vec::new(),
             locations: Vec::new(),
+            variant_uid: variant_uid.clone(),
         }
     }
 
@@ -35,7 +38,11 @@ impl Tracker {
 }
 
 impl UserData for Tracker {
-    fn add_fields<'lua, F: UserDataFields<'lua, Self>>(fields: &mut F) {}
+    fn add_fields<'lua, F: UserDataFields<'lua, Self>>(fields: &mut F) {
+        fields.add_field_method_get("ActiveVariantUID", |_, this| {
+            Ok(this.variant_uid.as_str().to_owned())
+        });
+    }
 
     fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(methods: &mut M) {
         methods.add_method_mut("AddMaps", |_, this, maps_path: String| {

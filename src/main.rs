@@ -8,23 +8,18 @@ use egui::{
     popup, Button, Color32, Image, ImageSource, Label, PopupCloseBehavior, Pos2, Rect, Rgba,
     Rounding, ScrollArea, Sense, SizeHint, Stroke, TextureOptions, Vec2, Widget,
 };
+use eyre::Result;
 use tetra_tracker::cli::Cli;
 use tetra_tracker::pack::api::tracker::{Location, MapLocation};
-use tetra_tracker::pack::{self, Pack};
+use tetra_tracker::pack::{self, manifest, Manifest, Pack};
 use tetra_tracker::ui::{self, LocationButton, PackPicker};
 
 fn main() {
     let cli = Cli::parse();
-    let pack = cli
-        .pack_path
-        .as_ref()
-        .and_then(|pack_path| match Pack::load(pack_path) {
-            Ok(pack) => Some(pack),
-            Err(err) => {
-                eprintln!("{err:#?}");
-                None
-            }
-        });
+    let pack = try_load_pack_from_cli(&cli)
+        .inspect_err(|err| eprintln!("{err:#?}"))
+        .ok()
+        .flatten();
 
     let native_options = eframe::NativeOptions::default();
 
@@ -33,6 +28,29 @@ fn main() {
         native_options,
         Box::new(|cc| Ok(Box::new(App::new(cc, pack)))),
     );
+}
+
+fn try_load_pack_from_cli(cli: &Cli) -> Result<Option<Pack>> {
+    let Some(pack_path) = &cli.pack_path else {
+        return Ok(None);
+    };
+
+    let manifest_path = pack_path.join(manifest::FILENAME);
+    let manifest = Manifest::load(manifest_path)?;
+    let maybe_variant = match &cli.variant {
+        Some(requested_variant) => manifest.variants.iter().find(|(variant_uid, variant)| {
+            requested_variant == variant_uid.as_str()
+                || requested_variant == variant.display_name.as_str()
+        }),
+        None => manifest.variants.first(),
+    };
+    let Some((variant_id, _)) = maybe_variant else {
+        return Ok(None);
+    };
+
+    let pack = Pack::load(pack_path, variant_id)?;
+
+    Ok(Some(pack))
 }
 
 enum App {

@@ -7,6 +7,8 @@ use archipelago::Archipelago;
 use script_host::ScriptHost;
 pub use tracker::Tracker;
 
+use crate::pack::VariantUID;
+
 mod archipelago;
 mod script_host;
 pub mod tracker;
@@ -16,7 +18,7 @@ pub struct Api {
 }
 
 impl Api {
-    pub fn new(root: impl Into<PathBuf>) -> Result<Self> {
+    pub fn new(root: impl Into<PathBuf>, variant_uid: &VariantUID) -> Result<Self> {
         let root = root.into();
         let lua = Lua::new();
         let globals = lua.globals();
@@ -28,7 +30,7 @@ impl Api {
             .set("Archipelago", Archipelago::new(&root))
             .context("failed to set Archipelago global")?;
         globals
-            .set("Tracker", Tracker::new(root))
+            .set("Tracker", Tracker::new(root, variant_uid))
             .context("failed to set Archipelago global")?;
 
         drop(globals);
