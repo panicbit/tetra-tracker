@@ -6,10 +6,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::BOM;
 
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Manifest {
     name: String,
+    author: String,
     game_name: String,
     package_uid: String,
     package_version: String,
@@ -21,11 +21,10 @@ pub struct Manifest {
 impl Manifest {
     pub fn load(path: impl AsRef<Path>) -> Result<Self> {
         let path = path.as_ref();
-        let data =  fs::read_to_string(path)
-            .context("failed to read manifest")?;
+        let data = fs::read_to_string(path).context("failed to read manifest")?;
         let data = data.strip_prefix(BOM).unwrap_or(&data);
-        let manifest = serde_json::from_str::<Manifest>(data)
-            .context("failed to parse manifest")?;
+        let manifest =
+            serde_hjson::from_str::<Manifest>(data).context("failed to parse manifest")?;
 
         Ok(manifest)
     }
