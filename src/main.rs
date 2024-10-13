@@ -8,13 +8,7 @@ use egui::{
 use tetra_tracker::pack::api::tracker::{Location, MapLocation};
 use tetra_tracker::pack::api::Tracker;
 use tetra_tracker::pack::Pack;
-
-mod image {
-    use egui::{include_image, ImageSource};
-
-    pub const CLOSED: ImageSource = include_image!("../assets/closed.png");
-    pub const OPEN: ImageSource = include_image!("../assets/open.png");
-}
+use tetra_tracker::ui::LocationButton;
 
 fn main() {
     let pack = Pack::load("packs/ittledew2-poptracker").unwrap();
@@ -141,112 +135,5 @@ impl eframe::App for MyEguiApp {
                 }
             });
         });
-    }
-}
-
-struct LocationButton<'a> {
-    popup_id: egui::Id,
-    location: &'a Location,
-    map_location: &'a MapLocation,
-}
-
-impl<'a> LocationButton<'a> {
-    fn new(ui: &egui::Ui, location: &'a Location, map_location: &'a MapLocation) -> Self {
-        Self {
-            popup_id: ui.make_persistent_id((
-                &map_location.map,
-                &location.name,
-                map_location.x,
-                map_location.y,
-            )),
-            location,
-            map_location,
-        }
-    }
-}
-
-impl<'a> Widget for LocationButton<'a> {
-    fn ui(self, ui: &mut egui::Ui) -> egui::Response {
-        let size = Vec2::new(10., 10.);
-
-        let sense = Sense::hover() | Sense::click();
-        let (rect, mut response) = ui.allocate_exact_size(size, sense);
-
-        let popup_id = self.popup_id;
-        let mut popup_just_opened = false;
-
-        if response.hovered {
-            ui.memory_mut(|mem| mem.open_popup(popup_id));
-            popup_just_opened = true;
-        };
-
-        let popup_is_open = ui.memory(|mem| mem.is_popup_open(popup_id));
-
-        let outline_color = if popup_is_open {
-            Color32::RED
-        } else {
-            Color32::BLACK
-        };
-
-        ui.painter().rect(
-            rect,
-            Rounding::ZERO,
-            Color32::GREEN,
-            Stroke::new(2., outline_color),
-        );
-        // let button = Button::new("");
-
-        if popup_is_open {
-            let window_fill = &mut ui.style_mut().visuals.window_fill;
-            *window_fill = window_fill.gamma_multiply(0.8);
-
-            let popup_response = popup::popup_below_widget(
-                ui,
-                popup_id,
-                &response,
-                PopupCloseBehavior::CloseOnClickOutside,
-                |ui| {
-                    ui.scope(|ui| {
-                        ScrollArea::vertical()
-                            .max_height(ui.available_height())
-                            .show(ui, |ui| {
-                                ui.set_min_width(150.);
-                                ui.vertical(|ui| {
-                                    ui.strong(&self.location.name);
-
-                                    for section in &self.location.sections {
-                                        if let Some(name) = &section.name {
-                                            ui.strong(name);
-                                        }
-
-                                        ui.add(
-                                            Image::new(image::CLOSED)
-                                                .max_size(Vec2::splat(25.))
-                                                .fit_to_original_size(1.),
-                                        );
-                                    }
-                                });
-                            })
-                    })
-                    .response
-                },
-            );
-
-            if !popup_just_opened {
-                if let Some(popup_response) = popup_response {
-                    if let Some(pointer_pos) = ui.ctx().pointer_latest_pos() {
-                        let popup_area = popup_response.rect.expand(35.);
-                        let hovering = popup_area.contains(pointer_pos);
-
-                        if !hovering {
-                            println!("Closing popup!");
-                            ui.memory_mut(|mem| mem.close_popup());
-                        }
-                    }
-                }
-            }
-        }
-
-        response
     }
 }
