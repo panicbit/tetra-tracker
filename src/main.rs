@@ -1,5 +1,7 @@
 #![expect(warnings)]
 
+use std::env;
+
 use clap::Parser;
 use egui::emath::OrderedFloat;
 use egui::{
@@ -8,91 +10,81 @@ use egui::{
 };
 use tetra_tracker::cli::Cli;
 use tetra_tracker::pack::api::tracker::{Location, MapLocation};
-use tetra_tracker::pack::api::Tracker;
-use tetra_tracker::pack::Pack;
-use tetra_tracker::ui::LocationButton;
+use tetra_tracker::pack::{self, Pack};
+use tetra_tracker::ui::{self, LocationButton, PackPicker};
 
 fn main() {
     let cli = Cli::parse();
-    let pack = Pack::load(&cli.pack).unwrap();
+    let pack = cli
+        .pack_path
+        .as_ref()
+        .and_then(|pack_path| match Pack::load(pack_path) {
+            Ok(pack) => Some(pack),
+            Err(err) => {
+                eprintln!("{err:#?}");
+                None
+            }
+        });
 
     let native_options = eframe::NativeOptions::default();
+
     eframe::run_native(
         "Tetra Tracker",
         native_options,
-        Box::new(|cc| Ok(Box::new(MyEguiApp::new(cc, pack)))),
+        Box::new(|cc| Ok(Box::new(App::new(cc, pack)))),
     );
 }
 
-struct MyEguiApp {
-    pack: Pack,
-    current_map: usize,
+enum App {
+    PackPicker(PackPicker),
+    Tracker(Tracker),
 }
 
-impl MyEguiApp {
-    fn new(cc: &eframe::CreationContext<'_>, pack: Pack) -> Self {
+impl App {
+    fn new(cc: &eframe::CreationContext<'_>, pack: Option<Pack>) -> Self {
         egui_extras::install_image_loaders(&cc.egui_ctx);
 
         // Customize egui here with cc.egui_ctx.set_fonts and cc.egui_ctx.set_visuals.
         // Restore app state using cc.storage (requires the "persistence" feature).
         // Use the cc.gl (a glow::Context) to create graphics shaders and buffers that you can use
         // for e.g. egui::PaintCallback.
+
+        match pack {
+            None => {
+                let pack_dir = env::current_dir().unwrap().join("packs");
+                Self::PackPicker(PackPicker::new(pack_dir))
+            }
+            Some(pack) => Self::Tracker(Tracker::new(pack)),
+        }
+    }
+}
+
+impl eframe::App for App {
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        match self {
+            App::PackPicker(pack_picker) => {
+                if let Some(pack) = pack_picker.update(ctx, frame) {
+                    *self = Self::Tracker(Tracker::new(pack));
+                }
+            }
+            App::Tracker(tracker) => tracker.update(ctx, frame),
+        }
+    }
+}
+
+struct Tracker {
+    pack: Pack,
+    current_map: usize,
+}
+
+impl Tracker {
+    fn new(pack: Pack) -> Self {
         Self {
             pack,
             current_map: 0,
         }
     }
 
-    fn add_locations(
-        ctx: &egui::Context,
-        ui: &mut egui::Ui,
-        tracker: &Tracker,
-        map_widget_rect: Rect,
-        map_image_size: Option<Vec2>,
-        current_map: usize,
-    ) {
-        let current_map = tracker
-            .maps()
-            .get(current_map)
-            .map(|map| map.name.as_str())
-            .unwrap_or_default();
-
-        // let current_map_name = tra
-        let Some(map_image_size) = map_image_size else {
-            eprintln!("map image size unknown!");
-            return;
-        };
-
-        let Vec2 {
-            x: width,
-            y: height,
-        } = map_image_size;
-
-        let width = width as f32;
-        let height = height as f32;
-
-        for location in tracker.locations() {
-            for map_location in &location.map_locations {
-                if map_location.map != current_map {
-                    continue;
-                }
-
-                let x = map_location.x as f32 / width * map_widget_rect.width();
-                let y = map_location.y as f32 / height * map_widget_rect.height();
-
-                let button_rect = Rect {
-                    min: map_widget_rect.min + Vec2::new(x, y) - Vec2::splat(5.),
-                    max: map_widget_rect.min + Vec2::new(x, y) + Vec2::splat(5.),
-                };
-
-                let location_button = LocationButton::new(ui, location, map_location);
-                let button_response = ui.put(button_rect, location_button);
-            }
-        }
-    }
-}
-
-impl eframe::App for MyEguiApp {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         self.pack.api.with_tracker(|tracker| {
             egui::CentralPanel::default().show(ctx, |ui| {
@@ -138,5 +130,53 @@ impl eframe::App for MyEguiApp {
                 }
             });
         });
+    }
+
+    fn add_locations(
+        ctx: &egui::Context,
+        ui: &mut egui::Ui,
+        tracker: &pack::api::Tracker,
+        map_widget_rect: Rect,
+        map_image_size: Option<Vec2>,
+        current_map: usize,
+    ) {
+        let current_map = tracker
+            .maps()
+            .get(current_map)
+            .map(|map| map.name.as_str())
+            .unwrap_or_default();
+
+        // let current_map_name = tra
+        let Some(map_image_size) = map_image_size else {
+            eprintln!("map image size unknown!");
+            return;
+        };
+
+        let Vec2 {
+            x: width,
+            y: height,
+        } = map_image_size;
+
+        let width = width as f32;
+        let height = height as f32;
+
+        for location in tracker.locations() {
+            for map_location in &location.map_locations {
+                if map_location.map != current_map {
+                    continue;
+                }
+
+                let x = map_location.x as f32 / width * map_widget_rect.width();
+                let y = map_location.y as f32 / height * map_widget_rect.height();
+
+                let button_rect = Rect {
+                    min: map_widget_rect.min + Vec2::new(x, y) - Vec2::splat(5.),
+                    max: map_widget_rect.min + Vec2::new(x, y) + Vec2::splat(5.),
+                };
+
+                let location_button = LocationButton::new(ui, location, map_location);
+                let button_response = ui.put(button_rect, location_button);
+            }
+        }
     }
 }

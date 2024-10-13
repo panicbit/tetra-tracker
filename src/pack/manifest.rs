@@ -8,14 +8,14 @@ use crate::BOM;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Manifest {
-    name: String,
-    author: String,
-    game_name: String,
-    package_uid: String,
-    package_version: String,
-    platform: String,
-    platform_override: Option<String>,
-    variants: IndexMap<String, Variant>,
+    pub name: String,
+    pub author: String,
+    pub game_name: String,
+    pub package_uid: String,
+    pub package_version: String,
+    pub platform: String,
+    pub platform_override: Option<String>,
+    pub variants: IndexMap<String, Variant>,
 }
 
 impl Manifest {
