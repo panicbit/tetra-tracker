@@ -1,17 +1,20 @@
 #![expect(warnings)]
 
+use clap::Parser;
 use egui::emath::OrderedFloat;
 use egui::{
     popup, Button, Color32, Image, ImageSource, Label, PopupCloseBehavior, Pos2, Rect, Rgba,
     Rounding, ScrollArea, Sense, SizeHint, Stroke, TextureOptions, Vec2, Widget,
 };
+use tetra_tracker::cli::Cli;
 use tetra_tracker::pack::api::tracker::{Location, MapLocation};
 use tetra_tracker::pack::api::Tracker;
 use tetra_tracker::pack::Pack;
 use tetra_tracker::ui::LocationButton;
 
 fn main() {
-    let pack = Pack::load("packs/ittledew2-poptracker").unwrap();
+    let cli = Cli::parse();
+    let pack = Pack::load(&cli.pack).unwrap();
 
     let native_options = eframe::NativeOptions::default();
     eframe::run_native(

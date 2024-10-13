@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+clap = { version = "4.5.20", features = ["derive"] }
 # git version because: https://github.com/emilk/egui/pull/5208
 eframe = { version = "0.29.1", git = "https://github.com/rustbasic/egui", rev = "d51c7bcaab8659f8aee3f4dceb0196c86fd80468" }
 egui = { version = "0.29.1", git = "https://github.com/rustbasic/egui", rev = "d51c7bcaab8659f8aee3f4dceb0196c86fd80468" }
