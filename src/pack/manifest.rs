@@ -11,13 +11,20 @@ pub const FILENAME: &str = "manifest.json";
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Manifest {
+    #[serde(default)]
     pub name: String,
+    #[serde(default)]
     pub author: String,
+    #[serde(default)]
     pub game_name: String,
     pub package_uid: String,
+    #[serde(default)]
     pub package_version: String,
+    #[serde(default)]
     pub platform: String,
+    #[serde(default)]
     pub platform_override: Option<String>,
+    #[serde(default)]
     pub variants: IndexMap<VariantUID, Variant>,
 }
 
