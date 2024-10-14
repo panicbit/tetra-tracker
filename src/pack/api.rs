@@ -1,10 +1,11 @@
 use std::path::PathBuf;
 
 use eyre::{Context, Result};
-use mlua::{AnyUserData, Lua};
+use mlua::{AnyUserData, Lua, MultiValue};
 
 use archipelago::Archipelago;
 use script_host::ScriptHost;
+use tracing::{info, warn};
 pub use tracker::Tracker;
 
 use crate::pack::VariantUID;
@@ -22,6 +23,25 @@ impl Api {
         let root = root.into();
         let lua = Lua::new();
         let globals = lua.globals();
+
+        lua.set_warning_function(|_lua, msg, _to_continue| {
+            warn!("{msg}");
+            Ok(())
+        });
+
+        let print = lua.create_function(|_lua, values: MultiValue| {
+            let messages = values
+                .into_iter()
+                .map(|value| value.to_string())
+                .collect::<Result<Vec<_>, _>>()?;
+            let message = messages.as_slice().join("\t");
+
+            info!("{message}");
+
+            Ok(())
+        })?;
+
+        globals.set("print", print)?;
 
         globals
             .set("ScriptHost", ScriptHost::new(&root))
