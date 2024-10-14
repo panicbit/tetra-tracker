@@ -12,7 +12,7 @@ use eyre::Result;
 use tetra_tracker::cli::Cli;
 use tetra_tracker::pack::api::tracker::{Location, MapLocation};
 use tetra_tracker::pack::{self, manifest, Manifest, Pack};
-use tetra_tracker::ui;
+use tetra_tracker::ui::{self, PackPicker};
 
 fn main() {
     let cli = Cli::parse();
@@ -85,7 +85,12 @@ impl eframe::App for App {
                     *self = Self::Tracker(ui::Tracker::new(pack));
                 }
             }
-            App::Tracker(tracker) => tracker.update(ctx, frame),
+            App::Tracker(tracker) => {
+                if tracker.update(ctx, frame).is_break() {
+                    let pack_dir = env::current_dir().unwrap().join("packs");
+                    *self = Self::PackPicker(PackPicker::new(pack_dir))
+                }
+            }
         }
     }
 }

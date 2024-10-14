@@ -1,3 +1,5 @@
+use std::ops::ControlFlow;
+
 use egui::SizeHint;
 use egui::TextureOptions;
 use egui::Widget;
@@ -20,13 +22,21 @@ impl Tracker {
         }
     }
 
-    pub fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+    pub fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) -> ControlFlow<()> {
+        let mut control_flow = ControlFlow::Continue(());
+
         self.pack.api.with_tracker(|tracker| {
             egui::CentralPanel::default().show(ctx, |ui| {
-                ui.horizontal_wrapped(|ui| {
-                    for (i, map) in tracker.maps().iter().enumerate() {
-                        ui.selectable_value(&mut self.current_map, i, &map.name);
+                ui.vertical(|ui| {
+                    if ui.button("📂").clicked() {
+                        control_flow = ControlFlow::Break(());
                     }
+
+                    ui.horizontal_wrapped(|ui| {
+                        for (i, map) in tracker.maps().iter().enumerate() {
+                            ui.selectable_value(&mut self.current_map, i, &map.name);
+                        }
+                    });
                 });
 
                 // // Preload all images
@@ -65,6 +75,8 @@ impl Tracker {
                 }
             });
         });
+
+        control_flow
     }
 
     fn add_locations(
