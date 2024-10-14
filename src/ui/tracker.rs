@@ -1,5 +1,7 @@
 use std::ops::ControlFlow;
 
+use egui::Button;
+use egui::ImageButton;
 use egui::SizeHint;
 use egui::TextureOptions;
 use egui::Widget;
@@ -7,6 +9,7 @@ use egui::Widget;
 use egui::{Image, Rect, Vec2};
 
 use crate::pack::{self, Pack};
+use crate::ui::image;
 use crate::ui::LocationButton;
 
 pub struct Tracker {
@@ -28,7 +31,10 @@ impl Tracker {
         self.pack.api.with_tracker(|tracker| {
             egui::CentralPanel::default().show(ctx, |ui| {
                 ui.vertical(|ui| {
-                    if ui.button("📂").clicked() {
+                    let load_image = Image::new(image::LOAD).max_size(Vec2::splat(20.));
+                    let load_button = Button::image(load_image);
+
+                    if ui.add(load_button).clicked() {
                         control_flow = ControlFlow::Break(());
                     }
 

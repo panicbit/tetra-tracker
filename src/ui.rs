@@ -13,4 +13,5 @@ pub mod image {
 
     pub const CLOSED: ImageSource = include_image!("../assets/closed.png");
     pub const OPEN: ImageSource = include_image!("../assets/open.png");
+    pub const LOAD: ImageSource = include_image!("../assets/load.png");
 }
