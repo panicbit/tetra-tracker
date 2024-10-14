@@ -11,4 +11,6 @@ pub struct Location {
     // access_rules: TODO,
     #[serde(default)]
     pub map_locations: Vec<MapLocation>,
+    #[serde(default)]
+    pub children: Vec<Location>,
 }
