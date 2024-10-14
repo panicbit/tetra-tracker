@@ -11,6 +11,6 @@ pub use tracker::Tracker;
 pub mod image {
     use egui::{include_image, ImageSource};
 
-    pub const CLOSED: ImageSource = include_image!("../../assets/closed.png");
-    pub const OPEN: ImageSource = include_image!("../../assets/open.png");
+    pub const CLOSED: ImageSource = include_image!("../assets/closed.png");
+    pub const OPEN: ImageSource = include_image!("../assets/open.png");
 }
