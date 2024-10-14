@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 
 use egui::{CentralPanel, CollapsingHeader, ScrollArea, Ui, WidgetText};
 use eyre::{Error, Result};
+use tracing::error;
 
 use crate::pack::{manifest, Manifest, Pack};
 
@@ -80,7 +81,7 @@ fn show_variants(
                     Ok(pack) => {
                         *loaded_pack = Some(pack);
                     }
-                    Err(err) => eprintln!("{err:?}"),
+                    Err(err) => error!("{err:?}"),
                 }
             }
 
@@ -106,7 +107,7 @@ fn try_read_pack_manifests(packs_path: &Path) -> Result<Vec<(PathBuf, Manifest)>
         let manifest = match Manifest::load(&manifest_path) {
             Ok(manifest) => manifest,
             Err(err) => {
-                eprintln!("{err:?}");
+                error!("{err:?}");
                 continue;
             }
         };

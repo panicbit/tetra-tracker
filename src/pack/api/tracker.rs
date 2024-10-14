@@ -3,6 +3,7 @@ use std::path::PathBuf;
 
 use eyre::{eyre, Context};
 use mlua::{UserData, UserDataFields, UserDataMethods};
+use tracing::warn;
 
 use crate::pack::VariantUID;
 use crate::BOM;
@@ -67,7 +68,7 @@ impl UserData for Tracker {
         });
 
         methods.add_method_mut("AddItems", |_, _this, _items_pathh: String| {
-            eprintln!("TODO: Tracker.AddItems");
+            warn!("TODO: Tracker.AddItems");
 
             Ok(())
         });
@@ -86,7 +87,7 @@ impl UserData for Tracker {
         });
 
         methods.add_method_mut("AddLayouts", |_, _tehis, _layouts_path: String| {
-            eprintln!("TODO: Tracker.AddLayouts");
+            warn!("TODO: Tracker.AddLayouts");
 
             Ok(())
         });

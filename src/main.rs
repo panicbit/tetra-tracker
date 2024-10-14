@@ -5,11 +5,26 @@ use eyre::Result;
 use tetra_tracker::cli::Cli;
 use tetra_tracker::pack::{manifest, Manifest, Pack};
 use tetra_tracker::ui::{self, PackPicker};
+use tracing::level_filters::LevelFilter;
+use tracing::{error, info};
 
 fn main() {
+    let fmt_subscriber = tracing_subscriber::FmtSubscriber::builder()
+        .compact()
+        .with_file(false)
+        .with_line_number(false)
+        .without_time()
+        .with_target(false)
+        .with_max_level(LevelFilter::DEBUG)
+        .finish();
+    tracing::subscriber::set_global_default(fmt_subscriber).expect("failed to set global tracer");
+
+    let version = env!("CARGO_PKG_VERSION");
+    info!(version, "Starting tetra-tracker");
+
     let cli = Cli::parse();
     let pack = try_load_pack_from_cli(&cli)
-        .inspect_err(|err| eprintln!("{err:?}"))
+        .inspect_err(|err| error!("{err:?}"))
         .ok()
         .flatten();
 

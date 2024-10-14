@@ -1,4 +1,5 @@
 use egui::{popup, Color32, PopupCloseBehavior, Rounding, Sense, Stroke, Ui, Vec2, Widget};
+use tracing::trace;
 
 use crate::pack::api::tracker::{Location, MapLocation};
 use crate::ui::LocationPopup;
@@ -81,7 +82,7 @@ impl<'a> Widget for LocationButton<'a> {
                         let hovering = popup_area.contains(pointer_pos);
 
                         if !hovering {
-                            println!("Closing popup!");
+                            trace!("Closing popup!");
                             ui.memory_mut(|mem| mem.close_popup());
                         }
                     }

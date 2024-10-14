@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use mlua::{Lua, RegistryKey, UserData, UserDataFields, UserDataMethods};
+use tracing::{debug, error};
 
 pub struct Archipelago {
     root: PathBuf,
@@ -35,7 +36,7 @@ impl Archipelago {
         for handler_set in handler_sets {
             for (name, handler) in handler_set.drain(..) {
                 if let Err(err) = lua.remove_registry_value(handler) {
-                    eprintln!("Failed to remove handler `{name}` from the registry {err:?}")
+                    error!("Failed to remove handler `{name}` from the registry {err:?}")
                 }
             }
         }
@@ -44,7 +45,7 @@ impl Archipelago {
 
 impl Drop for Archipelago {
     fn drop(&mut self) {
-        eprintln!("Dropping Archipelago userdata");
+        debug!("Dropping Archipelago userdata");
     }
 }
 

@@ -3,8 +3,8 @@ use std::ops::ControlFlow;
 use egui::Button;
 use egui::SizeHint;
 use egui::TextureOptions;
-
 use egui::{Image, Rect, Vec2};
+use tracing::error;
 
 use crate::pack::{self, Pack};
 use crate::ui::image;
@@ -81,7 +81,7 @@ impl Tracker {
         });
 
         if let Err(err) = result {
-            eprintln!("failed to access tracker: {err:?}");
+            error!("failed to access tracker: {err:?}");
         }
 
         control_flow
@@ -103,7 +103,7 @@ impl Tracker {
 
         // let current_map_name = tra
         let Some(map_image_size) = map_image_size else {
-            eprintln!("map image size unknown!");
+            error!("map image size unknown!");
             return;
         };
 

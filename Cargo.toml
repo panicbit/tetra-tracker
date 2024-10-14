@@ -16,3 +16,5 @@ indexmap = { version = "2.5.0", features = ["serde"] }
 mlua = { version = "0.9.9", features = ["lua54", "vendored"] }
 serde = { version = "1.0.210", features = ["derive", "rc"] }
 serde-hjson = "1.0.0"
+tracing = "0.1.40"
+tracing-subscriber = "0.3.18"
