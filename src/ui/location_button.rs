@@ -1,10 +1,7 @@
-use egui::{
-    popup, Color32, Image, PopupCloseBehavior, Response, Rounding, ScrollArea, Sense, Stroke, Ui,
-    Vec2, Widget,
-};
+use egui::{popup, Color32, PopupCloseBehavior, Rounding, Sense, Stroke, Ui, Vec2, Widget};
 
-use crate::pack::api::tracker::{Location, MapLocation, Section};
-use crate::ui::{image, LocationPopup};
+use crate::pack::api::tracker::{Location, MapLocation};
+use crate::ui::LocationPopup;
 
 pub struct LocationButton<'a> {
     popup_id: egui::Id,
@@ -32,7 +29,7 @@ impl<'a> Widget for LocationButton<'a> {
         let size = Vec2::new(10., 10.);
 
         let sense = Sense::hover() | Sense::click();
-        let (rect, mut response) = ui.allocate_exact_size(size, sense);
+        let (rect, response) = ui.allocate_exact_size(size, sense);
 
         let popup_id = self.popup_id;
         let mut popup_just_opened = false;

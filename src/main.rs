@@ -1,17 +1,9 @@
-#![expect(warnings)]
-
 use std::env;
 
 use clap::Parser;
-use egui::emath::OrderedFloat;
-use egui::{
-    popup, Button, Color32, ImageSource, Label, PopupCloseBehavior, Pos2, Rgba, Rounding,
-    ScrollArea, Sense, Stroke, Widget,
-};
 use eyre::Result;
 use tetra_tracker::cli::Cli;
-use tetra_tracker::pack::api::tracker::{Location, MapLocation};
-use tetra_tracker::pack::{self, manifest, Manifest, Pack};
+use tetra_tracker::pack::{manifest, Manifest, Pack};
 use tetra_tracker::ui::{self, PackPicker};
 
 fn main() {
@@ -27,7 +19,8 @@ fn main() {
         "Tetra Tracker",
         native_options,
         Box::new(|cc| Ok(Box::new(App::new(cc, pack)))),
-    );
+    )
+    .expect("failed to run via eframe");
 }
 
 fn try_load_pack_from_cli(cli: &Cli) -> Result<Option<Pack>> {

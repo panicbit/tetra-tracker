@@ -1,8 +1,7 @@
 use std::fs;
-use std::os::windows::fs::FileTypeExt;
 use std::path::{Path, PathBuf};
 
-use egui::{CentralPanel, CollapsingHeader, Grid, ScrollArea, SidePanel, Ui, Widget, WidgetText};
+use egui::{CentralPanel, CollapsingHeader, ScrollArea, Ui, WidgetText};
 use eyre::{Error, Result};
 
 use crate::pack::{manifest, Manifest, Pack};
@@ -22,7 +21,7 @@ impl PackPicker {
         }
     }
 
-    pub fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) -> Option<Pack> {
+    pub fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) -> Option<Pack> {
         let mut loaded_pack = None;
 
         CentralPanel::default().show(ctx, |ui| {

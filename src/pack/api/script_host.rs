@@ -13,7 +13,7 @@ impl ScriptHost {
 }
 
 impl UserData for ScriptHost {
-    fn add_fields<'lua, F: UserDataFields<'lua, Self>>(fields: &mut F) {}
+    fn add_fields<'lua, F: UserDataFields<'lua, Self>>(_fields: &mut F) {}
 
     fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(methods: &mut M) {
         methods.add_method("LoadScript", |lua, this, lua_path: String| {

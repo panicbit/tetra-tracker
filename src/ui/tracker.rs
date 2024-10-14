@@ -1,10 +1,8 @@
 use std::ops::ControlFlow;
 
 use egui::Button;
-use egui::ImageButton;
 use egui::SizeHint;
 use egui::TextureOptions;
-use egui::Widget;
 
 use egui::{Image, Rect, Vec2};
 
@@ -25,10 +23,10 @@ impl Tracker {
         }
     }
 
-    pub fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) -> ControlFlow<()> {
+    pub fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) -> ControlFlow<()> {
         let mut control_flow = ControlFlow::Continue(());
 
-        self.pack.api.with_tracker(|tracker| {
+        let result = self.pack.api.with_tracker(|tracker| {
             egui::CentralPanel::default().show(ctx, |ui| {
                 ui.vertical(|ui| {
                     let load_image = Image::new(image::LOAD).max_size(Vec2::splat(20.));
@@ -82,11 +80,15 @@ impl Tracker {
             });
         });
 
+        if let Err(err) = result {
+            eprintln!("failed to access tracker: {err:?}");
+        }
+
         control_flow
     }
 
     fn add_locations(
-        ctx: &egui::Context,
+        _ctx: &egui::Context,
         ui: &mut egui::Ui,
         tracker: &pack::api::Tracker,
         map_widget_rect: Rect,
@@ -110,9 +112,6 @@ impl Tracker {
             y: height,
         } = map_image_size;
 
-        let width = width as f32;
-        let height = height as f32;
-
         for location in tracker.locations() {
             for map_location in &location.map_locations {
                 if map_location.map != current_map {
@@ -128,7 +127,7 @@ impl Tracker {
                 };
 
                 let location_button = LocationButton::new(ui, location, map_location);
-                let button_response = ui.put(button_rect, location_button);
+                ui.put(button_rect, location_button);
             }
         }
     }

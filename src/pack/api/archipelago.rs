@@ -33,15 +33,23 @@ impl Archipelago {
         ];
 
         for handler_set in handler_sets {
-            for (_name, handler) in handler_set.drain(..) {
-                lua.remove_registry_value(handler);
+            for (name, handler) in handler_set.drain(..) {
+                if let Err(err) = lua.remove_registry_value(handler) {
+                    eprintln!("Failed to remove handler `{name}` from the registry {err:?}")
+                }
             }
         }
     }
 }
 
+impl Drop for Archipelago {
+    fn drop(&mut self) {
+        eprintln!("Dropping Archipelago userdata");
+    }
+}
+
 impl UserData for Archipelago {
-    fn add_fields<'lua, F: UserDataFields<'lua, Self>>(fields: &mut F) {}
+    fn add_fields<'lua, F: UserDataFields<'lua, Self>>(_fields: &mut F) {}
 
     fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(methods: &mut M) {
         methods.add_method_mut(

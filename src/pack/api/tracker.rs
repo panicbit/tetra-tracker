@@ -1,14 +1,10 @@
-use core::fmt;
+use std::fs;
 use std::path::PathBuf;
-use std::str::FromStr;
-use std::{default, fs};
 
 use eyre::{eyre, Context};
 use mlua::{UserData, UserDataFields, UserDataMethods};
-use serde::{de, Deserialize, Deserializer, Serialize};
 
 use crate::pack::VariantUID;
-use crate::util::value_or_string;
 use crate::BOM;
 
 mod map;
@@ -70,7 +66,7 @@ impl UserData for Tracker {
             Ok(())
         });
 
-        methods.add_method_mut("AddItems", |_, this, items_path: String| {
+        methods.add_method_mut("AddItems", |_, _this, _items_pathh: String| {
             eprintln!("TODO: Tracker.AddItems");
 
             Ok(())
@@ -89,7 +85,7 @@ impl UserData for Tracker {
             Ok(())
         });
 
-        methods.add_method_mut("AddLayouts", |_, this, layouts_path: String| {
+        methods.add_method_mut("AddLayouts", |_, _tehis, _layouts_path: String| {
             eprintln!("TODO: Tracker.AddLayouts");
 
             Ok(())

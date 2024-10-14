@@ -3,7 +3,6 @@ use std::sync::Arc;
 
 use eyre::{eyre, Context, Result};
 pub use manifest::Manifest;
-use mlua::Lua;
 use serde::{Deserialize, Serialize};
 
 use crate::pack::api::Api;
@@ -44,7 +43,7 @@ impl Pack {
         Ok(Self {
             root,
             manifest,
-            api: api,
+            api,
         })
     }
 }
