@@ -1,6 +1,6 @@
 use std::{fs, path::Path};
 
-use eyre::{Context, Result};
+use eyre::{eyre, Context, Result};
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 
@@ -31,10 +31,11 @@ pub struct Manifest {
 impl Manifest {
     pub fn load(path: impl AsRef<Path>) -> Result<Self> {
         let path = path.as_ref();
-        let data = fs::read_to_string(path).context("failed to read manifest")?;
+        let data = fs::read_to_string(path)
+            .with_context(|| eyre!("failed to read manifest: {}", path.display()))?;
         let data = data.strip_prefix(BOM).unwrap_or(&data);
-        let manifest =
-            serde_hjson::from_str::<Manifest>(data).context("failed to parse manifest")?;
+        let manifest = serde_hjson::from_str::<Manifest>(data)
+            .with_context(|| eyre!("failed to parse manifest: {}", path.display()))?;
 
         Ok(manifest)
     }

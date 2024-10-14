@@ -81,7 +81,7 @@ fn show_variants(
                     Ok(pack) => {
                         *loaded_pack = Some(pack);
                     }
-                    Err(err) => eprintln!("{err:#?}"),
+                    Err(err) => eprintln!("{err:?}"),
                 }
             }
 
@@ -107,7 +107,7 @@ fn try_read_pack_manifests(packs_path: &Path) -> Result<Vec<(PathBuf, Manifest)>
         let manifest = match Manifest::load(&manifest_path) {
             Ok(manifest) => manifest,
             Err(err) => {
-                eprintln!("{err:#?}");
+                eprintln!("{err:?}");
                 continue;
             }
         };

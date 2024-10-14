@@ -17,7 +17,7 @@ use tetra_tracker::ui::{self, PackPicker};
 fn main() {
     let cli = Cli::parse();
     let pack = try_load_pack_from_cli(&cli)
-        .inspect_err(|err| eprintln!("{err:#?}"))
+        .inspect_err(|err| eprintln!("{err:?}"))
         .ok()
         .flatten();
 

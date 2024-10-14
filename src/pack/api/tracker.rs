@@ -11,6 +11,18 @@ use crate::pack::VariantUID;
 use crate::util::value_or_string;
 use crate::BOM;
 
+mod map;
+pub use map::{LocationShape, Map};
+
+mod location;
+pub use location::Location;
+
+mod map_location;
+pub use map_location::MapLocation;
+
+mod section;
+pub use section::Section;
+
 pub struct Tracker {
     root: PathBuf,
     maps: Vec<Map>,
@@ -91,48 +103,4 @@ impl UserData for Tracker {
             )))
         });
     }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Map {
-    pub name: String,
-    #[serde(deserialize_with = "value_or_string")]
-    pub location_size: u32,
-    #[serde(deserialize_with = "value_or_string")]
-    pub location_border_thickness: u32,
-    #[serde(default)]
-    pub location_shape: LocationShape,
-    pub img: String,
-}
-
-#[derive(Serialize, Deserialize, Default, Debug, Clone, Copy)]
-#[serde(rename_all = "lowercase")]
-pub enum LocationShape {
-    #[default]
-    Rect,
-    Diamond,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Location {
-    pub name: String,
-    pub sections: Vec<Section>,
-    // access_rules: TODO,
-    pub map_locations: Vec<MapLocation>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct MapLocation {
-    pub map: String,
-    #[serde(deserialize_with = "value_or_string")]
-    pub x: i32,
-    #[serde(deserialize_with = "value_or_string")]
-    pub y: i32,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Section {
-    pub name: Option<String>,
-    // access_rules: TODO,
-    // todo: more fields
 }
