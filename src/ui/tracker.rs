@@ -112,7 +112,7 @@ impl Tracker {
             y: height,
         } = map_image_size;
 
-        for location in tracker.locations() {
+        for location in tracker.locations_recursive() {
             for map_location in &location.map_locations {
                 if map_location.map != current_map {
                     continue;

@@ -1,5 +1,5 @@
-use std::fs;
 use std::path::PathBuf;
+use std::{fs, iter};
 
 use eyre::{eyre, Context};
 use mlua::{UserData, UserDataFields, UserDataMethods};
@@ -43,6 +43,12 @@ impl Tracker {
 
     pub fn locations(&self) -> &[Location] {
         &self.locations
+    }
+
+    pub fn locations_recursive(&self) -> impl Iterator<Item = &Location> {
+        self.locations
+            .iter()
+            .flat_map(|location| iter::once(location).chain(location.child_locations_recursive()))
     }
 }
 
