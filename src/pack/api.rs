@@ -5,7 +5,7 @@ use mlua::{AnyUserData, Lua, LuaOptions, MultiValue, StdLib};
 
 use archipelago::Archipelago;
 use script_host::ScriptHost;
-use tracing::{info, warn};
+use tracing::info;
 pub use tracker::Tracker;
 
 use crate::pack::VariantUID;
