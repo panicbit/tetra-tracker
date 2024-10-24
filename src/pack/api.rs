@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use eyre::{Context, Result};
-use mlua::{AnyUserData, Lua, MultiValue};
+use mlua::{AnyUserData, Lua, LuaOptions, MultiValue, StdLib};
 
 use archipelago::Archipelago;
 use script_host::ScriptHost;
@@ -21,7 +21,9 @@ pub struct Api {
 impl Api {
     pub fn new(root: impl Into<PathBuf>, variant_uid: &VariantUID) -> Result<Self> {
         let root = root.into();
-        let lua = Lua::new();
+        let options = LuaOptions::default();
+
+        let lua = Lua::new_with(stdlib(), options).context("failed to create lua state")?;
         let globals = lua.globals();
 
         lua.set_warning_function(|_lua, msg, _to_continue| {
@@ -97,4 +99,17 @@ impl Api {
     pub fn lua(&self) -> &Lua {
         &self.lua
     }
+}
+
+fn stdlib() -> StdLib {
+    [
+        StdLib::STRING,
+        StdLib::TABLE,
+        StdLib::UTF8,
+        StdLib::MATH,
+        // StdLib::IO,
+        StdLib::PACKAGE,
+    ]
+    .into_iter()
+    .fold(StdLib::NONE, |libs, lib| libs | lib)
 }
