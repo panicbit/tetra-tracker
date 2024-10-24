@@ -26,11 +26,6 @@ impl Api {
         let lua = Lua::new_with(stdlib(), options).context("failed to create lua state")?;
         let globals = lua.globals();
 
-        lua.set_warning_function(|_lua, msg, _to_continue| {
-            warn!("{msg}");
-            Ok(())
-        });
-
         let print = lua.create_function(|_lua, values: MultiValue| {
             let messages = values
                 .into_iter()
@@ -56,6 +51,8 @@ impl Api {
             .context("failed to set Archipelago global")?;
 
         drop(globals);
+
+        lua.sandbox(true).context("failed to enable sandbox mode")?;
 
         Ok(Self { lua })
     }
