@@ -3,7 +3,7 @@ use std::{fs, iter};
 
 use eyre::{eyre, Context};
 use mlua::{UserData, UserDataFields, UserDataMethods};
-use tracing::{debug_span, warn};
+use tracing::{debug, debug_span, warn};
 
 use crate::pack::VariantUID;
 use crate::BOM;
@@ -49,6 +49,12 @@ impl Tracker {
         self.locations
             .iter()
             .flat_map(|location| iter::once(location).chain(location.child_locations_recursive()))
+    }
+}
+
+impl Drop for Tracker {
+    fn drop(&mut self) {
+        debug!("Dropping Tracker");
     }
 }
 

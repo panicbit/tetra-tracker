@@ -4,6 +4,7 @@ use std::sync::Arc;
 use eyre::{eyre, Context, Result};
 pub use manifest::Manifest;
 use serde::{Deserialize, Serialize};
+use tracing::debug;
 
 use crate::pack::api::Api;
 
@@ -46,6 +47,12 @@ impl Pack {
             manifest,
             api,
         })
+    }
+}
+
+impl Drop for Pack {
+    fn drop(&mut self) {
+        debug!("Dropping Pack");
     }
 }
 

@@ -27,7 +27,7 @@ impl Archipelago {
 
 impl Drop for Archipelago {
     fn drop(&mut self) {
-        debug!("Dropping Archipelago userdata");
+        debug!("Dropping Archipelago");
     }
 }
 

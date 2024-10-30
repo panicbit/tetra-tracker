@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use mlua::{ErrorContext, UserData, UserDataFields, UserDataMethods, UserDataRef};
-use tracing::{debug_span, info_span, trace};
+use tracing::{debug, debug_span, info_span, trace};
 
 pub struct ScriptHost {
     root: PathBuf,
@@ -10,6 +10,12 @@ pub struct ScriptHost {
 impl ScriptHost {
     pub fn new(root: impl Into<PathBuf>) -> Self {
         Self { root: root.into() }
+    }
+}
+
+impl Drop for ScriptHost {
+    fn drop(&mut self) {
+        debug!("Dropping ScriptHost");
     }
 }
 
