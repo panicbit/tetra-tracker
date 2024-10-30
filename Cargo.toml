@@ -14,7 +14,12 @@ egui_extras = { version = "0.29.1", features = [
 ], git = "https://github.com/rustbasic/egui", rev = "d51c7bcaab8659f8aee3f4dceb0196c86fd80468" }
 eyre = "0.6.12"
 indexmap = { version = "2.6.0", features = ["serde"] }
-mlua = { version = "0.10.0", features = ["luau", "vendored", "macros", "send"] }
+mlua = { version = "0.10.0", features = [
+    "luau",
+    "vendored",
+    "macros",
+    "error-send",
+] }
 serde = { version = "1.0.214", features = ["derive", "rc"] }
 serde-hjson = "1.1.0"
 tracing = "0.1.40"
