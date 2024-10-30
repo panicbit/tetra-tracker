@@ -9,6 +9,8 @@ use tracing::level_filters::LevelFilter;
 use tracing::{error, info};
 
 fn main() {
+    color_eyre::install().unwrap();
+
     let fmt_subscriber = tracing_subscriber::FmtSubscriber::builder()
         .compact()
         .with_file(false)

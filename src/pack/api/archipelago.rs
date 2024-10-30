@@ -50,9 +50,9 @@ impl Drop for Archipelago {
 }
 
 impl UserData for Archipelago {
-    fn add_fields<'lua, F: UserDataFields<'lua, Self>>(_fields: &mut F) {}
+    fn add_fields<F: UserDataFields<Self>>(_fields: &mut F) {}
 
-    fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(methods: &mut M) {
+    fn add_methods<M: UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method_mut(
             "AddClearHandler",
             |lua, this, (name, callback): (String, mlua::Value)| {

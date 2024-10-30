@@ -53,13 +53,13 @@ impl Tracker {
 }
 
 impl UserData for Tracker {
-    fn add_fields<'lua, F: UserDataFields<'lua, Self>>(fields: &mut F) {
+    fn add_fields<F: UserDataFields<Self>>(fields: &mut F) {
         fields.add_field_method_get("ActiveVariantUID", |_, this| {
             Ok(this.variant_uid.as_str().to_owned())
         });
     }
 
-    fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(methods: &mut M) {
+    fn add_methods<M: UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method_mut("AddMaps", |_, this, maps_path: String| {
             let maps_path = this.root.join(maps_path);
             let maps = fs::read_to_string(&maps_path)?;

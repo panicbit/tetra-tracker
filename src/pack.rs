@@ -35,6 +35,7 @@ impl Pack {
         let api = Api::new(&root, variant_uid).context("failed to create lua api")?;
 
         let init_path = root.join("scripts/init.lua");
+
         api.lua()
             .load(&*init_path)
             .exec()

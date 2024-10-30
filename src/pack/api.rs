@@ -64,7 +64,7 @@ impl Api {
         let tracker = self
             .lua
             .globals()
-            .get::<_, AnyUserData>("Tracker")
+            .get::<AnyUserData>("Tracker")
             .context("failed to get `Tracker` global")?;
         let tracker = tracker
             .borrow::<Tracker>()
@@ -82,7 +82,7 @@ impl Api {
         let tracker = self
             .lua
             .globals()
-            .get::<_, AnyUserData>("Tracker")
+            .get::<AnyUserData>("Tracker")
             .context("failed to get `Tracker` global")?;
         let mut tracker = tracker
             .borrow_mut::<Tracker>()
