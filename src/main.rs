@@ -1,25 +1,19 @@
 use std::env;
 
 use clap::Parser;
-use eyre::Result;
+use eyre::{Context, Result};
 use tetra_tracker::cli::Cli;
 use tetra_tracker::pack::{manifest, Manifest, Pack};
 use tetra_tracker::ui::{self, PackPicker};
 use tracing::level_filters::LevelFilter;
-use tracing::{error, info};
+use tracing::{error, info, instrument};
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::EnvFilter;
 
-fn main() {
-    color_eyre::install().unwrap();
-
-    let fmt_subscriber = tracing_subscriber::FmtSubscriber::builder()
-        .compact()
-        .with_file(false)
-        .with_line_number(false)
-        .without_time()
-        .with_target(false)
-        .with_max_level(LevelFilter::DEBUG)
-        .finish();
-    tracing::subscriber::set_global_default(fmt_subscriber).expect("failed to set global tracer");
+#[tracing::instrument(level = "trace", skip())]
+fn main() -> Result<()> {
+    color_eyre::install()?;
+    init_tracing()?;
 
     let version = env!("CARGO_PKG_VERSION");
     info!(version, "Starting tetra-tracker");
@@ -38,8 +32,34 @@ fn main() {
         Box::new(|cc| Ok(Box::new(App::new(cc, pack)))),
     )
     .expect("failed to run via eframe");
+
+    Ok(())
 }
 
+fn init_tracing() -> Result<()> {
+    let env_filter = EnvFilter::builder()
+        .with_default_directive(LevelFilter::DEBUG.into())
+        .from_env()?;
+
+    let fmt_subscriber = tracing_subscriber::fmt::layer()
+        .with_file(false)
+        .with_line_number(false)
+        .without_time()
+        .with_target(false);
+
+    let erorr_subcsriber = tracing_error::ErrorLayer::default();
+
+    let subscriber = tracing_subscriber::Registry::default()
+        .with(env_filter)
+        .with(fmt_subscriber)
+        .with(erorr_subcsriber);
+
+    tracing::subscriber::set_global_default(subscriber).context("failed to set global tracer")?;
+
+    Ok(())
+}
+
+#[instrument(level = "debug")]
 fn try_load_pack_from_cli(cli: &Cli) -> Result<Option<Pack>> {
     let Some(pack_path) = &cli.pack_path else {
         return Ok(None);
@@ -69,6 +89,7 @@ enum App {
 }
 
 impl App {
+    #[instrument(skip_all)]
     fn new(cc: &eframe::CreationContext<'_>, pack: Option<Pack>) -> Self {
         egui_extras::install_image_loaders(&cc.egui_ctx);
 
@@ -88,6 +109,7 @@ impl App {
 }
 
 impl eframe::App for App {
+    #[instrument(skip_all, level = "trace")]
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         match self {
             App::PackPicker(pack_picker) => {

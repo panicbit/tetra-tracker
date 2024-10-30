@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use std::path::PathBuf;
 
 use eyre::{Context, Result};
@@ -5,7 +6,7 @@ use mlua::{AnyUserData, Lua, LuaOptions, MultiValue, StdLib};
 
 use archipelago::Archipelago;
 use script_host::ScriptHost;
-use tracing::info;
+use tracing::{info, instrument};
 pub use tracker::Tracker;
 
 use crate::pack::VariantUID;
@@ -19,7 +20,8 @@ pub struct Api {
 }
 
 impl Api {
-    pub fn new(root: impl Into<PathBuf>, variant_uid: &VariantUID) -> Result<Self> {
+    #[instrument]
+    pub fn new(root: impl Into<PathBuf> + Debug, variant_uid: &VariantUID) -> Result<Self> {
         let root = root.into();
         let options = LuaOptions::default();
 
@@ -57,6 +59,7 @@ impl Api {
         Ok(Self { lua })
     }
 
+    #[instrument(skip_all)]
     pub fn with_tracker<F, R>(&self, f: F) -> Result<R>
     where
         F: FnOnce(&Tracker) -> R,
@@ -75,6 +78,7 @@ impl Api {
         Ok(result)
     }
 
+    #[instrument(skip_all)]
     pub fn with_tracker_mut<F, R>(&self, f: F) -> Result<R>
     where
         F: FnOnce(&mut Tracker) -> R,

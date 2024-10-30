@@ -3,6 +3,7 @@ use std::{fs, path::Path};
 use eyre::{eyre, Context, Result};
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
+use tracing::instrument;
 
 use crate::pack::VariantUID;
 use crate::BOM;
@@ -29,6 +30,7 @@ pub struct Manifest {
 }
 
 impl Manifest {
+    #[instrument(skip(path), fields(path = ?path.as_ref()))]
     pub fn load(path: impl AsRef<Path>) -> Result<Self> {
         let path = path.as_ref();
         let data = fs::read_to_string(path)

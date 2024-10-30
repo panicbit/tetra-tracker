@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 
-use mlua::{Function, UserData, UserDataFields, UserDataMethods};
-use tracing::debug;
+use eyre::eyre;
+use mlua::{ErrorContext, Function, UserData, UserDataFields, UserDataMethods, Value};
+use tracing::{debug, debug_span};
 
 pub struct Archipelago {
     root: PathBuf,
@@ -37,7 +38,8 @@ impl UserData for Archipelago {
     fn add_methods<M: UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method_mut(
             "AddClearHandler",
-            |_lua, this, (name, callback): (String, mlua::Value)| {
+            |_lua, this, (name, callback): (String, Value)| {
+                let _span = debug_span!("Archipelago::AddClearHandler", ?name, ?callback).entered();
                 let callback = callback
                     .as_function()
                     .ok_or_else(|| mlua::Error::runtime("callback must be a function"))?
@@ -51,7 +53,8 @@ impl UserData for Archipelago {
 
         methods.add_method_mut(
             "AddItemHandler",
-            |_lua, this, (name, callback): (String, mlua::Value)| {
+            |_lua, this, (name, callback): (String, Value)| {
+                let _span = debug_span!("Archipelago::AddItemHandler", ?name, ?callback).entered();
                 let callback = callback
                     .as_function()
                     .ok_or_else(|| mlua::Error::runtime("callback must be a function"))?
@@ -65,7 +68,9 @@ impl UserData for Archipelago {
 
         methods.add_method_mut(
             "AddLocationHandler",
-            |_lua, this, (name, callback): (String, mlua::Value)| {
+            |_lua, this, (name, callback): (String, Value)| {
+                let _span =
+                    debug_span!("Archipelago::AddLocationHandler", ?name, ?callback).entered();
                 let callback = callback
                     .as_function()
                     .ok_or_else(|| mlua::Error::runtime("callback must be a function"))?
@@ -79,7 +84,9 @@ impl UserData for Archipelago {
 
         methods.add_method_mut(
             "AddRetrievedHandler",
-            |_lua, this, (name, callback): (String, mlua::Value)| {
+            |_lua, this, (name, callback): (String, Value)| {
+                let _span =
+                    debug_span!("Archipelago::AddRetrievedHandler", ?name, ?callback).entered();
                 let callback = callback
                     .as_function()
                     .ok_or_else(|| mlua::Error::runtime("callback must be a function"))?
@@ -93,7 +100,9 @@ impl UserData for Archipelago {
 
         methods.add_method_mut(
             "AddSetReplyHandler",
-            |_lua, this, (name, callback): (String, mlua::Value)| {
+            |_lua, this, (name, callback): (String, Value)| {
+                let _span =
+                    debug_span!("Archipelago::AddSetReplyHandler", ?name, ?callback).entered();
                 let callback = callback
                     .as_function()
                     .ok_or_else(|| mlua::Error::runtime("callback must be a function"))?
@@ -105,7 +114,8 @@ impl UserData for Archipelago {
             },
         );
 
-        methods.add_meta_method("__index", |_, _, index: mlua::Value| -> mlua::Result<()> {
+        methods.add_meta_method("__index", |_, _, index: Value| -> mlua::Result<()> {
+            let _span = debug_span!("Archipelago::__index", ?index).entered();
             let index = index.to_string()?;
 
             Err(mlua::Error::runtime(format!(

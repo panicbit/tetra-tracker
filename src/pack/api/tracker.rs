@@ -3,7 +3,7 @@ use std::{fs, iter};
 
 use eyre::{eyre, Context};
 use mlua::{UserData, UserDataFields, UserDataMethods};
-use tracing::warn;
+use tracing::{debug_span, warn};
 
 use crate::pack::VariantUID;
 use crate::BOM;
@@ -61,6 +61,7 @@ impl UserData for Tracker {
 
     fn add_methods<M: UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method_mut("AddMaps", |_, this, maps_path: String| {
+            let _span = debug_span!("Tracker::AddMaps").entered();
             let maps_path = this.root.join(maps_path);
             let maps = fs::read_to_string(&maps_path)?;
             let maps = maps.strip_prefix(BOM).unwrap_or(&maps);
@@ -74,7 +75,8 @@ impl UserData for Tracker {
         });
 
         methods.add_method_mut("AddItems", |_, _this, _items_pathh: String| {
-            warn!("TODO: Tracker.AddItems");
+            let _span = debug_span!("Tracker::AddItems").entered();
+            warn!("TODO: implement");
 
             Ok(())
         });
@@ -93,7 +95,8 @@ impl UserData for Tracker {
         });
 
         methods.add_method_mut("AddLayouts", |_, _tehis, _layouts_path: String| {
-            warn!("TODO: Tracker.AddLayouts");
+            let _span = debug_span!("Tracker::AddLayouts").entered();
+            warn!("TODO: implement");
 
             Ok(())
         });

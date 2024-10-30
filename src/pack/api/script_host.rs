@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
-use eyre::Context;
-use mlua::{AnyUserData, ErrorContext, UserData, UserDataFields, UserDataMethods, UserDataRef};
+use mlua::{ErrorContext, UserData, UserDataFields, UserDataMethods, UserDataRef};
+use tracing::{debug_span, info_span, trace};
 
 pub struct ScriptHost {
     root: PathBuf,
@@ -19,14 +19,24 @@ impl UserData for ScriptHost {
     fn add_methods<M: UserDataMethods<Self>>(methods: &mut M) {
         methods.add_function(
             "LoadScript",
-            |lua, (this, lua_path): (UserDataRef<Self>, String)| {
-                let lua_path = this.root.join(lua_path);
+            |lua, (this, path): (UserDataRef<Self>, String)| {
+                let _span = debug_span!("ScriptHost::LoadScript", path = path).entered();
+                let path = this.root.join(path);
 
                 drop(this);
 
-                lua.load(lua_path)
-                    .exec()
-                    .map_err(|err| err.context("LoadScript: failed to execute"))?;
+                info_span!("lua").in_scope(|| {
+                    trace!("Start executing");
+
+                    let result = lua
+                        .load(path)
+                        .exec()
+                        .map_err(|err| err.context("LoadScript: failed to execute"));
+
+                    trace!("End executing");
+
+                    result
+                })?;
 
                 Ok(())
             },
