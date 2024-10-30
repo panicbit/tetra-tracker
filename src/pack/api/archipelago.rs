@@ -1,7 +1,6 @@
 use std::path::PathBuf;
 
-use eyre::eyre;
-use mlua::{ErrorContext, Function, UserData, UserDataFields, UserDataMethods, Value};
+use mlua::{Function, UserData, UserDataFields, UserDataMethods, Value};
 use tracing::{debug, debug_span};
 
 pub struct Archipelago {
