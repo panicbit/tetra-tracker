@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+ariadne = "0.5.0"
+chumsky = "1.0.0-alpha.7"
 clap = { version = "4.5.20", features = ["derive"] }
 color-eyre = "0.6.3"
 # git version because: https://github.com/emilk/egui/pull/5208
@@ -26,6 +28,9 @@ serde-hjson = "1.1.0"
 tracing = "0.1.40"
 tracing-error = "0.2.0"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+
+[dev-dependencies]
+pretty_assertions = "1.4.1"
 
 [profile.dev.package.backtrace]
 opt-level = 3
