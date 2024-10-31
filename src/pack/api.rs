@@ -71,7 +71,7 @@ impl Api {
             .context("failed to get `Tracker` global")?;
         let tracker = tracker
             .borrow::<Tracker>()
-            .context("failed to borrow tracker mutably")?;
+            .context("failed to borrow tracker immutably")?;
 
         let result = f(&tracker);
 
