@@ -65,13 +65,8 @@ impl<'a> Widget for LocationButton<'a> {
                 &response,
                 PopupCloseBehavior::CloseOnClickOutside,
                 |ui| {
-                    ui.scope(|ui| {
-                        ui.add(LocationPopup::new(
-                            &self.location.name,
-                            &self.location.sections,
-                        ))
-                    })
-                    .response
+                    ui.scope(|ui| ui.add(LocationPopup::new(self.location)))
+                        .response
                 },
             );
 
