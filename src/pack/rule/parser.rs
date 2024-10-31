@@ -49,22 +49,26 @@ pub fn rule<'a>() -> impl Parser<'a, Rule> {
             .map(Box::new)
             .map(Rule::Optional);
 
+        let rule_item = string
+            .filter(|item: &&str| !item.is_empty())
+            .map(String::from)
+            .map(Rule::Item);
+
         choice((
             rule_call,
             rule_accessibility_level,
             rule_reference,
             rule_checkable,
             rule_optional,
-            string.map(String::from).map(Rule::Item),
+            rule_item,
         ))
         .separated_by(just(','))
-        .at_least(1)
         .collect()
         .map(|mut rules: Vec<Rule>| {
-            if rules.len() > 1 {
-                Rule::Multi(rules)
-            } else {
+            if rules.len() == 1 {
                 rules.pop().unwrap()
+            } else {
+                Rule::Multi(rules)
             }
         })
     })
@@ -102,6 +106,16 @@ mod tests {
             parse("{@location/section}"),
             checkable(reference("location", "section")),
         );
+    }
+
+    #[test]
+    fn checkable_empty() {
+        assert_eq!(parse("{}"), checkable(multi([])));
+    }
+
+    #[test]
+    fn optional_empty() {
+        assert_eq!(parse("[]"), optional(multi([])));
     }
 
     #[test]
