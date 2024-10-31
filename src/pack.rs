@@ -10,7 +10,7 @@ use crate::pack::api::Api;
 
 pub mod api;
 pub mod manifest;
-mod rule;
+pub mod rule;
 
 pub struct Pack {
     pub root: PathBuf,

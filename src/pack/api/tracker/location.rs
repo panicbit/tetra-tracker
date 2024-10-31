@@ -3,13 +3,15 @@ use std::iter;
 use serde::{Deserialize, Serialize};
 
 use crate::pack::api::tracker::{MapLocation, Section};
+use crate::pack::rule::Rule;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Location {
     pub name: String,
     #[serde(default)]
     pub sections: Vec<Section>,
-    // access_rules: TODO,
+    #[serde(default)]
+    pub access_rules: Vec<Rule>,
     #[serde(default)]
     pub map_locations: Vec<MapLocation>,
     #[serde(default)]
