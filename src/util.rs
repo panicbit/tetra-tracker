@@ -20,6 +20,29 @@ pub fn deserialize_hjson<T: DeserializeOwned>(hjson: impl AsRef<[u8]>) -> Result
     Ok(items)
 }
 
+pub(crate) mod string_list {
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let list = String::deserialize(deserializer)?;
+        let list = list.split(",").map(String::from).collect::<Vec<_>>();
+
+        Ok(list)
+    }
+
+    pub fn serialize<S>(list: &[String], ser: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let list = list.join(",");
+
+        list.serialize(ser)
+    }
+}
+
 pub(crate) fn value_or_string<'de, D, T>(deserializer: D) -> Result<T, D::Error>
 where
     D: Deserializer<'de>,

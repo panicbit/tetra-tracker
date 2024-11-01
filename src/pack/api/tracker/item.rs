@@ -1,4 +1,4 @@
-use crate::util::{const_bool, const_i32, option_value_or_string, value_or_string};
+use crate::util::{const_bool, const_i32, option_value_or_string, string_list, value_or_string};
 use hex_color::HexColor;
 use serde::{Deserialize, Serialize};
 
@@ -6,17 +6,12 @@ use serde::{Deserialize, Serialize};
 pub struct Item {
     pub name: Option<String>,
     /// Code identifier(s) of this item. Multiple values are comma seperated.
-    pub codes: Option<String>,
+    #[serde(default, with = "string_list")]
+    pub codes: Vec<String>,
     #[serde(flatten)]
     pub variant: Variant,
     // TODO: overlay_align
     // TODO: capturable
-}
-
-impl Item {
-    pub fn codes(&self) -> impl Iterator<Item = &str> {
-        self.codes.iter().flat_map(|codes| codes.split(","))
-    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -63,27 +58,17 @@ pub struct Stage {
     pub display: Display,
     /// Code identifier(s) of this item.
     /// Multiple values are comma seperated.
-    pub codes: Option<String>,
+    #[serde(default, with = "string_list")]
+    pub codes: Vec<String>,
     /// Secondary code identifier(s) of this item.
     /// Multiple values are comma seperated.
     /// Unused at the moment.
-    pub secondary_codes: Option<String>,
+    #[serde(default, with = "string_list")]
+    pub secondary_codes: Vec<String>,
     /// If set to true, stages will provide for the codes
     /// of the previous stages as well.
     #[serde(default = "const_bool::<true>", deserialize_with = "value_or_string")]
     pub inherit_codes: bool,
-}
-
-impl Stage {
-    pub fn codes(&self) -> impl Iterator<Item = &str> {
-        self.codes.iter().flat_map(|codes| codes.split(","))
-    }
-
-    pub fn secondary_codes(&self) -> impl Iterator<Item = &str> {
-        self.secondary_codes
-            .iter()
-            .flat_map(|codes| codes.split(","))
-    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -177,7 +162,8 @@ pub struct CompositeToggleImage {
     pub right: bool,
     /// Code identifier(s) of this item.
     /// Multiple values are comma seperated.
-    pub codes: String,
+    #[serde(default, with = "string_list")]
+    pub codes: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
