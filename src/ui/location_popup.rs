@@ -1,6 +1,6 @@
 use egui::{Image, Response, ScrollArea, Ui, Vec2, Widget};
 
-use crate::pack::api::tracker::Location;
+use crate::pack::api::tracker::flat::Location;
 use crate::ui::image;
 
 pub struct LocationPopup<'a> {

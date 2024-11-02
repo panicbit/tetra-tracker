@@ -1,7 +1,8 @@
 use egui::{popup, Color32, PopupCloseBehavior, Rounding, Sense, Stroke, Ui, Vec2, Widget};
 use tracing::trace;
 
-use crate::pack::api::tracker::{Location, MapLocation};
+use crate::pack::api::tracker::flat::Location;
+use crate::pack::api::tracker::nested::MapLocation;
 use crate::ui::LocationPopup;
 
 pub struct LocationButton<'a> {

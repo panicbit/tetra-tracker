@@ -2,7 +2,7 @@ use std::iter;
 
 use serde::{Deserialize, Serialize};
 
-use crate::pack::api::tracker::{MapLocation, Section};
+use crate::pack::api::tracker::nested::{MapLocation, Section};
 use crate::pack::rule::Rule;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
