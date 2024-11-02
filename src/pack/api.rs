@@ -2,10 +2,11 @@ use std::fmt::Debug;
 use std::path::PathBuf;
 
 use eyre::{Context, Result};
-use mlua::{AnyUserData, Lua, LuaOptions, MultiValue, StdLib};
+use mlua::{AnyUserData, FromLua, IntoLua, Lua, LuaOptions, MultiValue, StdLib, Table, Value};
 
 use archipelago::Archipelago;
 use script_host::ScriptHost;
+use strum::{EnumIs, FromRepr};
 use tracing::{info, instrument};
 pub use tracker::Tracker;
 
@@ -41,6 +42,8 @@ impl Api {
         })?;
 
         globals.set("print", print)?;
+
+        globals.set("AccessibilityLevel", AccessabilityLevel::table(&lua)?)?;
 
         globals
             .set("ScriptHost", ScriptHost::new(&root))
@@ -113,4 +116,49 @@ fn stdlib() -> StdLib {
     ]
     .into_iter()
     .fold(StdLib::NONE, |libs, lib| libs | lib)
+}
+
+#[derive(FromRepr, EnumIs, Copy, Clone)]
+#[repr(i32)]
+pub enum AccessabilityLevel {
+    None = 0,
+    Partial = 1,
+    Inspect = 2,
+    SequenceBreak = 3,
+    Normal = 4,
+    Cleared = 5,
+}
+
+impl AccessabilityLevel {
+    pub fn table(lua: &Lua) -> mlua::Result<Table> {
+        lua.create_table_from([
+            ("None", Self::None),
+            ("Partial", Self::Partial),
+            ("Inspect", Self::Inspect),
+            ("SequenceBreak", Self::SequenceBreak),
+            ("Normal", Self::Normal),
+            ("Cleared", Self::Cleared),
+        ])
+    }
+}
+
+impl IntoLua for AccessabilityLevel {
+    fn into_lua(self, _lua: &Lua) -> mlua::Result<mlua::Value> {
+        Ok(Value::Integer(self as i32))
+    }
+}
+
+impl IntoLua for &'_ AccessabilityLevel {
+    fn into_lua(self, _lua: &Lua) -> mlua::Result<mlua::Value> {
+        Ok(Value::Integer(*self as i32))
+    }
+}
+
+impl FromLua for AccessabilityLevel {
+    fn from_lua(value: Value, _lua: &Lua) -> mlua::Result<Self> {
+        value
+            .as_i32()
+            .and_then(AccessabilityLevel::from_repr)
+            .ok_or_else(|| mlua::Error::runtime(format!("invalid accessibility level: {value:?}")))
+    }
 }
