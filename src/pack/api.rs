@@ -7,7 +7,7 @@ use mlua::{AnyUserData, FromLua, IntoLua, Lua, LuaOptions, MultiValue, StdLib, T
 use archipelago::Archipelago;
 use script_host::ScriptHost;
 use strum::{EnumIs, FromRepr};
-use tracing::{info, instrument};
+use tracing::{info, instrument, warn};
 pub use tracker::Tracker;
 
 use crate::pack::VariantUID;
@@ -54,8 +54,6 @@ impl Api {
         globals
             .set("Tracker", Tracker::new(root, variant_uid))
             .context("failed to set Archipelago global")?;
-
-        drop(globals);
 
         lua.sandbox(true).context("failed to enable sandbox mode")?;
 
