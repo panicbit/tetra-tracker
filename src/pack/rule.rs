@@ -4,6 +4,11 @@ use std::str::FromStr;
 use ariadne::{Color, Label, Report, ReportKind, Source};
 use chumsky::Parser;
 use eyre::eyre;
+use mlua::FromLua;
+use mlua::Function;
+use mlua::IntoLua;
+use mlua::Lua;
+use mlua::MultiValue;
 use serde::de;
 use serde::Deserialize;
 use serde::Serialize;
@@ -129,6 +134,30 @@ impl Serialize for Rule {
 pub struct Call {
     pub name: String,
     pub args: Vec<String>,
+}
+
+impl Call {
+    pub fn exec<R>(&self, lua: &Lua) -> mlua::Result<R>
+    where
+        R: FromLua,
+    {
+        let fun = lua.globals().get::<Function>(self.name.as_str())?;
+        let args = self.lua_args(lua)?;
+
+        fun.call::<R>(args)
+    }
+
+    pub fn lua_args(&self, lua: &Lua) -> mlua::Result<MultiValue> {
+        let mut args = MultiValue::with_capacity(self.args.len());
+
+        for arg in &self.args {
+            let lua_arg = arg.as_str().into_lua(lua)?;
+
+            args.push_front(lua_arg);
+        }
+
+        Ok(args)
+    }
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]

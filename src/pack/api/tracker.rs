@@ -2,9 +2,10 @@ use std::path::PathBuf;
 use std::{fs, iter};
 
 use eyre::{eyre, Context};
-use mlua::{UserData, UserDataFields, UserDataMethods};
-use tracing::{debug, debug_span, warn};
+use mlua::{Lua, UserData, UserDataFields, UserDataMethods};
+use tracing::{debug, debug_span, error, instrument, warn};
 
+use crate::pack::rule::{Call, Rule};
 use crate::pack::VariantUID;
 use crate::util::deserialize_hjson;
 
@@ -23,11 +24,14 @@ pub use map_location::MapLocation;
 mod section;
 pub use section::Section;
 
+mod stateful_item;
+pub use stateful_item::StatefulItem;
+
 pub struct Tracker {
     root: PathBuf,
     maps: Vec<Map>,
     locations: Vec<Location>,
-    items: Vec<Item>,
+    items: Vec<StatefulItem>,
     variant_uid: VariantUID,
 }
 
@@ -54,6 +58,48 @@ impl Tracker {
         self.locations
             .iter()
             .flat_map(|location| iter::once(location).chain(location.child_locations_recursive()))
+    }
+
+    #[instrument(level = "error", skip(self))]
+    pub fn provider_count_for_code(&self, lua: &Lua, code: &str) -> i32 {
+        let rule = match code.parse::<Rule>() {
+            Ok(rule) => rule,
+            Err(err) => {
+                error!("invalid code: {err:?}");
+                return 0;
+            }
+        };
+
+        match rule {
+            Rule::Call(call) => self.provider_count_for_call(lua, &call),
+            Rule::Item(name) => self.provider_count_for_item(&name),
+            _ => {
+                error!("invalid code (only lua calls and item code allowed)");
+                0
+            }
+        }
+    }
+
+    #[instrument(level = "error", skip(self))]
+    pub fn provider_count_for_call(&self, lua: &Lua, call: &Call) -> i32 {
+        match call.exec::<i32>(lua) {
+            Ok(count) => count,
+            Err(err) => {
+                error!("failed to call `{}`: {err:?}", call.name);
+                0
+            }
+        }
+    }
+
+    #[instrument(level = "error", skip(self))]
+    pub fn provider_count_for_item(&self, item_code: &str) -> i32 {
+        let mut count = 0;
+
+        for item in &self.items {
+            count += item.provider_count(item_code);
+        }
+
+        count
     }
 }
 
@@ -90,6 +136,8 @@ impl UserData for Tracker {
             let items = deserialize_hjson::<Vec<Item>>(&items)
                 .with_context(|| eyre!("failed to parse items json at {items_path:?}"))
                 .map_err(|err| mlua::Error::runtime(format!("{err:?}")))?;
+
+            let mut items = items.into_iter().map(StatefulItem::new).collect::<Vec<_>>();
 
             this.items.append(&mut items);
 

@@ -20,24 +20,26 @@ pub fn deserialize_hjson<T: DeserializeOwned>(hjson: impl AsRef<[u8]>) -> Result
     Ok(items)
 }
 
-pub(crate) mod string_list {
+pub(crate) mod string_list_set {
+    use fnv::FnvHashSet;
+    use itertools::Itertools;
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-    pub fn deserialize<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<FnvHashSet<String>, D::Error>
     where
         D: Deserializer<'de>,
     {
         let list = String::deserialize(deserializer)?;
-        let list = list.split(",").map(String::from).collect::<Vec<_>>();
+        let set = list.split(",").map(String::from).collect::<FnvHashSet<_>>();
 
-        Ok(list)
+        Ok(set)
     }
 
-    pub fn serialize<S>(list: &[String], ser: S) -> Result<S::Ok, S::Error>
+    pub fn serialize<S>(set: &FnvHashSet<String>, ser: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        let list = list.join(",");
+        let list = set.iter().join(",");
 
         list.serialize(ser)
     }

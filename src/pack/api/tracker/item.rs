@@ -1,15 +1,27 @@
-use crate::util::{const_bool, const_i32, option_value_or_string, string_list, value_or_string};
+use std::fmt::Debug;
+
+use crate::util::{
+    const_bool, const_i32, option_value_or_string, string_list_set, value_or_string,
+};
+use fnv::FnvHashSet;
 use hex_color::HexColor;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Item {
-    pub name: Option<String>,
-    /// Code identifier(s) of this item. Multiple values are comma seperated.
-    #[serde(default, with = "string_list")]
-    pub codes: Vec<String>,
+    #[serde(flatten)]
+    pub common: Common,
     #[serde(flatten)]
     pub variant: Variant,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Common {
+    #[serde(default)]
+    pub name: String,
+    /// Code identifier(s) of this item. Multiple values are comma seperated.
+    #[serde(default, with = "string_list_set")]
+    pub codes: FnvHashSet<String>,
     // TODO: overlay_align
     // TODO: capturable
 }
@@ -37,7 +49,7 @@ pub struct Static {
 pub struct Progressive {
     /// Stages of the progressive item.
     pub stages: Vec<Stage>,
-    /// Automatically addes a `"off"` stage if set to true.
+    /// Automatically adds a `"off"` stage if set to true.
     #[serde(default = "const_bool::<true>", deserialize_with = "value_or_string")]
     pub allow_disabled: bool,
     /// Initital stage index for the progressive item. Zero indexed.
@@ -58,13 +70,13 @@ pub struct Stage {
     pub display: Display,
     /// Code identifier(s) of this item.
     /// Multiple values are comma seperated.
-    #[serde(default, with = "string_list")]
-    pub codes: Vec<String>,
+    #[serde(default, with = "string_list_set")]
+    pub codes: FnvHashSet<String>,
     /// Secondary code identifier(s) of this item.
     /// Multiple values are comma seperated.
     /// Unused at the moment.
-    #[serde(default, with = "string_list")]
-    pub secondary_codes: Vec<String>,
+    #[serde(default, with = "string_list_set")]
+    pub secondary_codes: FnvHashSet<String>,
     /// If set to true, stages will provide for the codes
     /// of the previous stages as well.
     #[serde(default = "const_bool::<true>", deserialize_with = "value_or_string")]
@@ -129,22 +141,11 @@ pub struct ProgressiveToggle {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(untagged)]
-pub enum CompositeToggle {
-    Simple(SimpleCompositeToggle),
-    Complex(ComplexCompositeToggle),
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct SimpleCompositeToggle {
+pub struct CompositeToggle {
     /// Code identifier of the left item.
     pub item_left: String,
     /// Code identifier of the right item.
     pub item_right: String,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct ComplexCompositeToggle {
     /// Array of images and states (up to 4, on/off for each item)
     pub images: Vec<CompositeToggleImage>,
 }
@@ -162,8 +163,8 @@ pub struct CompositeToggleImage {
     pub right: bool,
     /// Code identifier(s) of this item.
     /// Multiple values are comma seperated.
-    #[serde(default, with = "string_list")]
-    pub codes: Vec<String>,
+    #[serde(default, with = "string_list_set")]
+    pub codes: FnvHashSet<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
