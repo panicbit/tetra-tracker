@@ -75,7 +75,7 @@ impl UserData for Tracker {
             let _span = debug_span!("Tracker::AddMaps").entered();
             let maps_path = this.root.join(maps_path);
             let maps = fs::read_to_string(&maps_path)?;
-            let mut maps = deserialize_hjson(&maps)
+            let mut maps = deserialize_hjson::<Vec<Map>>(&maps)
                 .with_context(|| eyre!("failed to parse maps json at {maps_path:?}"))
                 .map_err(|err| mlua::Error::runtime(format!("{err:?}")))?;
 
@@ -87,7 +87,7 @@ impl UserData for Tracker {
         methods.add_method_mut("AddItems", |_, this, items_path: String| {
             let items_path = this.root.join(items_path);
             let items = fs::read_to_string(&items_path)?;
-            let mut items = deserialize_hjson(&items)
+            let items = deserialize_hjson::<Vec<Item>>(&items)
                 .with_context(|| eyre!("failed to parse items json at {items_path:?}"))
                 .map_err(|err| mlua::Error::runtime(format!("{err:?}")))?;
 
@@ -99,7 +99,7 @@ impl UserData for Tracker {
         methods.add_method_mut("AddLocations", |_, this, locations_path: String| {
             let locations_path = this.root.join(locations_path);
             let locations = fs::read_to_string(&locations_path)?;
-            let mut locations = deserialize_hjson(&locations)
+            let mut locations = deserialize_hjson::<Vec<Location>>(&locations)
                 .with_context(|| eyre!("failed to parse locations json at {locations_path:?}"))
                 .map_err(|err| mlua::Error::runtime(format!("{err:?}")))?;
 
