@@ -59,7 +59,7 @@ fn init_tracing() -> Result<()> {
     Ok(())
 }
 
-#[instrument(level = "debug")]
+#[instrument(level = "trace")]
 fn try_load_pack_from_cli(cli: &Cli) -> Result<Option<Pack>> {
     let Some(pack_path) = &cli.pack_path else {
         return Ok(None);
