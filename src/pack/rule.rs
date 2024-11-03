@@ -155,7 +155,7 @@ impl Call {
         for arg in &self.args {
             let lua_arg = arg.as_str().into_lua(lua)?;
 
-            args.push_front(lua_arg);
+            args.push_back(lua_arg);
         }
 
         Ok(args)
