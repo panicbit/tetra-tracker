@@ -55,15 +55,15 @@ impl StatefulItem {
 
                 0
             }
-            StatefulItemVariant::Toggle { item: _, disabled } => {
+            StatefulItemVariant::Toggle { item: _, enabled } => {
                 if !common_codes_match {
                     return 0;
                 }
 
-                if *disabled {
-                    0
-                } else {
+                if *enabled {
                     1
+                } else {
+                    0
                 }
             }
             StatefulItemVariant::Consumable { item: _, count } => {
@@ -120,15 +120,15 @@ impl StatefulItem {
 
                 left_count + right_count
             }
-            StatefulItemVariant::ToggleBadged { item: _, disabled } => {
+            StatefulItemVariant::ToggleBadged { item: _, enabled } => {
                 if !common_codes_match {
                     return 0;
                 }
 
-                if *disabled {
-                    0
-                } else {
+                if *enabled {
                     1
+                } else {
+                    0
                 }
             }
         }
@@ -147,7 +147,7 @@ pub enum StatefulItemVariant {
     },
     Toggle {
         item: Toggle,
-        disabled: bool,
+        enabled: bool,
     },
     Consumable {
         item: Consumable,
@@ -164,7 +164,7 @@ pub enum StatefulItemVariant {
     },
     ToggleBadged {
         item: ToggleBadged,
-        disabled: bool,
+        enabled: bool,
     },
 }
 
@@ -174,11 +174,11 @@ impl StatefulItemVariant {
             item::Variant::Static(item) => Self::Static { item },
             item::Variant::Progressive(item) => Self::Progressive {
                 active_stage_index: item.initial_stage_idx,
-                disabled: false,
+                disabled: item.allow_disabled,
                 item,
             },
             item::Variant::Toggle(item) => Self::Toggle {
-                disabled: item.initial_active_state,
+                enabled: item.initial_active_state,
                 item,
             },
             item::Variant::Consumable(item) => Self::Consumable {
@@ -195,7 +195,7 @@ impl StatefulItemVariant {
                 right: false,
             },
             item::Variant::ToggleBadged(item) => Self::ToggleBadged {
-                disabled: item.initial_active_state,
+                enabled: item.initial_active_state,
                 item,
             },
         }

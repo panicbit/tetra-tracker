@@ -126,7 +126,7 @@ impl Tracker {
                     max: map_widget_rect.min + Vec2::new(x, y) + Vec2::splat(5.),
                 };
 
-                let location_button = LocationButton::new(ui, location, map_location);
+                let location_button = LocationButton::new(ui, location, map_location, tracker);
                 ui.put(button_rect, location_button);
             }
         }

@@ -1,18 +1,26 @@
+use chumsky::primitive::Any;
 use egui::{popup, Color32, PopupCloseBehavior, Rounding, Sense, Stroke, Ui, Vec2, Widget};
 use tracing::trace;
 
 use crate::pack::api::tracker::flat::Location;
 use crate::pack::api::tracker::nested::MapLocation;
-use crate::ui::LocationPopup;
+use crate::pack::api::{AccessibilityLevel, Tracker};
+use crate::ui::{color_for_accessibility_level, LocationPopup};
 
 pub struct LocationButton<'a> {
     popup_id: egui::Id,
     location: &'a Location,
     map_location: &'a MapLocation,
+    tracker: &'a Tracker,
 }
 
 impl<'a> LocationButton<'a> {
-    pub fn new(ui: &Ui, location: &'a Location, map_location: &'a MapLocation) -> Self {
+    pub fn new(
+        ui: &Ui,
+        location: &'a Location,
+        map_location: &'a MapLocation,
+        tracker: &'a Tracker,
+    ) -> Self {
         Self {
             popup_id: ui.make_persistent_id((
                 &map_location.map,
@@ -22,6 +30,7 @@ impl<'a> LocationButton<'a> {
             )),
             location,
             map_location,
+            tracker,
         }
     }
 }
@@ -43,6 +52,55 @@ impl<'a> Widget for LocationButton<'a> {
 
         let popup_is_open = ui.memory(|mem| mem.is_popup_open(popup_id));
 
+        // TODO: move section level aggregation into function
+        let mut accessible = false;
+        let mut inaccessible = false;
+        let mut sequence_breakable = false;
+        let mut checkable = false;
+        let mut all_cleared = true;
+
+        for section in &self.location.sections {
+            match self.tracker.section_accessibility_level(section) {
+                AccessibilityLevel::None => {
+                    inaccessible = true;
+                    all_cleared = false;
+                }
+                AccessibilityLevel::Partial => {
+                    inaccessible = true;
+                    all_cleared = false;
+                }
+                AccessibilityLevel::Inspect => {
+                    checkable = true;
+                    all_cleared = false;
+                }
+                AccessibilityLevel::SequenceBreak => {
+                    sequence_breakable = true;
+                    all_cleared = false;
+                }
+                AccessibilityLevel::Normal => {
+                    accessible = true;
+                    all_cleared = false;
+                }
+                AccessibilityLevel::Cleared => {}
+            }
+        }
+
+        let inner_color = if all_cleared {
+            Color32::DARK_GRAY
+        } else if sequence_breakable {
+            Color32::YELLOW
+        } else if checkable {
+            Color32::BLUE
+        } else if accessible && inaccessible {
+            Color32::ORANGE
+        } else if accessible {
+            Color32::GREEN
+        } else if inaccessible {
+            Color32::RED
+        } else {
+            Color32::from_rgb(255, 0, 255)
+        };
+
         let outline_color = if popup_is_open {
             Color32::RED
         } else {
@@ -52,7 +110,7 @@ impl<'a> Widget for LocationButton<'a> {
         ui.painter().rect(
             rect,
             Rounding::ZERO,
-            Color32::GREEN,
+            inner_color,
             Stroke::new(2., outline_color),
         );
 
@@ -66,7 +124,7 @@ impl<'a> Widget for LocationButton<'a> {
                 &response,
                 PopupCloseBehavior::CloseOnClickOutside,
                 |ui| {
-                    ui.scope(|ui| ui.add(LocationPopup::new(self.location)))
+                    ui.scope(|ui| ui.add(LocationPopup::new(self.location, self.tracker)))
                         .response
                 },
             );

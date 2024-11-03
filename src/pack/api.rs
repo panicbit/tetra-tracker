@@ -116,7 +116,7 @@ fn stdlib() -> StdLib {
     .fold(StdLib::NONE, |libs, lib| libs | lib)
 }
 
-#[derive(FromRepr, EnumIs, Copy, Clone)]
+#[derive(FromRepr, EnumIs, Copy, Clone, Debug)]
 #[repr(i32)]
 pub enum AccessibilityLevel {
     None = 0,

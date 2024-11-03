@@ -24,7 +24,8 @@ mlua = { version = "0.10.0", features = [
     "vendored",
     "macros",
     "error-send",
-    "send",
+    # TODO: make code work with send feature
+    # "send",
 ] }
 parking_lot = "0.12.3"
 serde = { version = "1.0.214", features = ["derive", "rc"] }

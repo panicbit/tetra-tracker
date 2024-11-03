@@ -212,9 +212,10 @@ impl AndCombiner {
 
 #[derive(Default)]
 pub struct OrCombiner {
+    any_rule: bool,
+    any_accessible: bool,
     inspectable: bool,
     sequence_breakable: bool,
-    // TODO: maybe track if any Normal/Cleared level got found?
 }
 
 impl OrCombiner {
@@ -223,27 +224,37 @@ impl OrCombiner {
     }
 
     pub fn add(&mut self, level: AccessibilityLevel) -> &mut Self {
+        self.any_rule = true;
+
         match level {
             AccessibilityLevel::None => {}
             AccessibilityLevel::Partial => {}
             AccessibilityLevel::Inspect => self.inspectable = true,
             AccessibilityLevel::SequenceBreak => self.sequence_breakable = true,
-            AccessibilityLevel::Normal => {}
-            AccessibilityLevel::Cleared => {}
+            AccessibilityLevel::Normal => self.any_accessible = true,
+            AccessibilityLevel::Cleared => self.any_accessible = true,
         }
 
         self
     }
 
     pub fn finish(&self) -> AccessibilityLevel {
-        if self.sequence_breakable {
+        if !self.any_rule {
+            return AccessibilityLevel::Normal;
+        }
+
+        if self.sequence_breakable && !self.any_accessible {
             return AccessibilityLevel::SequenceBreak;
         }
 
-        if self.inspectable {
+        if self.inspectable && !self.any_accessible {
             return AccessibilityLevel::Inspect;
         }
 
-        AccessibilityLevel::Normal
+        if self.any_accessible {
+            return AccessibilityLevel::Normal;
+        }
+
+        AccessibilityLevel::None
     }
 }

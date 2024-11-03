@@ -29,6 +29,8 @@ pub struct Tracker {
     locations: FnvHashMap<Id<Location>, Location>,
     items: Vec<StatefulItem>,
     variant_uid: VariantUID,
+    // TODO: this strong reference creates a cycle
+    // between Lua and Tracker and prevents dropping
     lua: Lua,
 }
 
@@ -219,7 +221,7 @@ impl Tracker {
 
         let mut combiner = rule::OrCombiner::new();
 
-        for rule in &location.access_rules {
+        for rule in &section.access_rules {
             combiner.add(self.resolve_rule(rule));
         }
 
@@ -320,6 +322,39 @@ impl Tracker {
             },
         }
     }
+
+    pub fn debug_location_by_name(&self, location_name: &str) {
+        let location = self
+            .locations()
+            .find(|location| location.name == location_name)
+            .unwrap();
+
+        self.debug_location(location);
+    }
+
+    pub fn debug_location(&self, location: &Location) {
+        let location_name = &location.name;
+        let level = self.location_accessibility_level(location);
+        tracing::debug!(">>> location `{location_name}` accessibility: {level:?}");
+
+        for section in &location.sections {
+            let section_name = &section.name;
+            let level = self.section_accessibility_level(section);
+            tracing::debug!(">>>     section `{section_name}` accessibility: {level:?}");
+
+            let mut combiner = rule::OrCombiner::new();
+
+            for rule in &section.access_rules {
+                let level = self.resolve_rule(rule);
+                combiner.add(level);
+                tracing::debug!(">>>         rule `{rule}` level: {level:?}");
+            }
+
+            let combined_level = combiner.finish();
+
+            tracing::debug!(">>>     combined accessibility: {combined_level:?}");
+        }
+    }
 }
 
 impl Drop for Tracker {
@@ -378,11 +413,17 @@ impl UserData for Tracker {
             Ok(())
         });
 
-        methods.add_method_mut("AddLayouts", |_, _tehis, _layouts_path: String| {
+        methods.add_method_mut("AddLayouts", |_, _this, _layouts_path: String| {
             let _span = debug_span!("Tracker::AddLayouts").entered();
             warn!("TODO: implement");
 
             Ok(())
+        });
+
+        methods.add_method("ProviderCountForCode", |lua, this, code: String| {
+            let count = this.provider_count_for_code(lua, &code);
+
+            Ok(count)
         });
 
         methods.add_meta_method("__index", |_, _, index: mlua::Value| -> mlua::Result<()> {
