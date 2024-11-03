@@ -116,7 +116,7 @@ impl<'a> Widget for LocationButton<'a> {
 
         if popup_is_open {
             let window_fill = &mut ui.style_mut().visuals.window_fill;
-            *window_fill = window_fill.gamma_multiply(0.8);
+            *window_fill = window_fill.gamma_multiply(0.9);
 
             let popup_response = popup::popup_below_widget(
                 ui,
