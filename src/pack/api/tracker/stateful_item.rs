@@ -36,12 +36,12 @@ impl StatefulItem {
                     return 0;
                 }
 
-                let Some(stages_to_check) = item.stages.get(*active_stage_index..) else {
+                let Some(stages_to_check) = item.stages.get(0..*active_stage_index) else {
                     error!("active stage index out of bounds");
                     return 0;
                 };
 
-                for stage in stages_to_check {
+                for stage in stages_to_check.iter().rev() {
                     let stage_matches = stage.codes.contains(item_code);
 
                     if stage_matches {
@@ -77,12 +77,12 @@ impl StatefulItem {
                 item,
                 active_stage_index,
             } => {
-                let Some(stages_to_check) = item.stages.get(*active_stage_index..) else {
+                let Some(stages_to_check) = item.stages.get(0..*active_stage_index) else {
                     error!("active stage index out of bounds");
                     return 0;
                 };
 
-                for stage in stages_to_check {
+                for stage in stages_to_check.iter().rev() {
                     let stage_matches = stage.codes.contains(item_code);
 
                     if stage_matches {
