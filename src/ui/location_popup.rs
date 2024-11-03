@@ -24,8 +24,8 @@ impl Widget for LocationPopup<'_> {
                     // ui.label(format!("{:#?}", self.location.access_rules));
 
                     for section in &self.location.sections {
-                        if let Some(name) = &section.name {
-                            ui.strong(name);
+                        if !section.name.is_empty() {
+                            ui.strong(&section.name);
                         }
 
                         // ui.label(format!("{:#?}", section.access_rules));

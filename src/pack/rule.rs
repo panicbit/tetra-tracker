@@ -13,6 +13,8 @@ use serde::de;
 use serde::Deserialize;
 use serde::Serialize;
 
+use crate::pack::api::AccessibilityLevel;
+
 pub mod parser;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -24,7 +26,7 @@ pub enum Rule {
     /// $fn_name|arg1|arg2|…
     Call(Call),
     /// ^$fn_name|arg1|arg2|…
-    AccessabilityLevel(Call),
+    AccessibilityLevel(Call),
     /// @location/section
     Reference(Reference),
     /// { rule }
@@ -55,7 +57,7 @@ impl fmt::Display for Rule {
                     write!(f, "|{arg}")?;
                 }
             }
-            Rule::AccessabilityLevel(call) => {
+            Rule::AccessibilityLevel(call) => {
                 let Call { name, args } = call;
 
                 write!(f, "^${name}")?;
@@ -164,4 +166,84 @@ impl Call {
 pub struct Reference {
     pub location: String,
     pub section: String,
+}
+
+#[derive(Default)]
+pub struct AndCombiner {
+    contains_none: bool,
+    inspectable: bool,
+    sequence_breakable: bool,
+}
+
+impl AndCombiner {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn add(&mut self, level: AccessibilityLevel) -> &mut Self {
+        match level {
+            AccessibilityLevel::None => self.contains_none = true,
+            AccessibilityLevel::Partial => self.contains_none = true,
+            AccessibilityLevel::Inspect => self.inspectable = true,
+            AccessibilityLevel::SequenceBreak => self.sequence_breakable = true,
+            AccessibilityLevel::Normal => {}
+            AccessibilityLevel::Cleared => {}
+        }
+
+        self
+    }
+
+    pub fn finish(&self) -> AccessibilityLevel {
+        if self.contains_none {
+            return AccessibilityLevel::None;
+        }
+
+        if self.sequence_breakable {
+            return AccessibilityLevel::SequenceBreak;
+        }
+
+        if self.inspectable {
+            return AccessibilityLevel::Inspect;
+        }
+
+        AccessibilityLevel::Normal
+    }
+}
+
+#[derive(Default)]
+pub struct OrCombiner {
+    inspectable: bool,
+    sequence_breakable: bool,
+    // TODO: maybe track if any Normal/Cleared level got found?
+}
+
+impl OrCombiner {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn add(&mut self, level: AccessibilityLevel) -> &mut Self {
+        match level {
+            AccessibilityLevel::None => {}
+            AccessibilityLevel::Partial => {}
+            AccessibilityLevel::Inspect => self.inspectable = true,
+            AccessibilityLevel::SequenceBreak => self.sequence_breakable = true,
+            AccessibilityLevel::Normal => {}
+            AccessibilityLevel::Cleared => {}
+        }
+
+        self
+    }
+
+    pub fn finish(&self) -> AccessibilityLevel {
+        if self.sequence_breakable {
+            return AccessibilityLevel::SequenceBreak;
+        }
+
+        if self.inspectable {
+            return AccessibilityLevel::Inspect;
+        }
+
+        AccessibilityLevel::Normal
+    }
 }

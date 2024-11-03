@@ -43,7 +43,7 @@ impl Api {
 
         globals.set("print", print)?;
 
-        globals.set("AccessibilityLevel", AccessabilityLevel::table(&lua)?)?;
+        globals.set("AccessibilityLevel", AccessibilityLevel::table(&lua)?)?;
 
         globals
             .set("ScriptHost", ScriptHost::new(&root))
@@ -52,7 +52,7 @@ impl Api {
             .set("Archipelago", Archipelago::new(&root))
             .context("failed to set Archipelago global")?;
         globals
-            .set("Tracker", Tracker::new(root, variant_uid))
+            .set("Tracker", Tracker::new(root, variant_uid, lua.clone()))
             .context("failed to set Archipelago global")?;
 
         lua.sandbox(true).context("failed to enable sandbox mode")?;
@@ -118,7 +118,7 @@ fn stdlib() -> StdLib {
 
 #[derive(FromRepr, EnumIs, Copy, Clone)]
 #[repr(i32)]
-pub enum AccessabilityLevel {
+pub enum AccessibilityLevel {
     None = 0,
     Partial = 1,
     Inspect = 2,
@@ -127,7 +127,23 @@ pub enum AccessabilityLevel {
     Cleared = 5,
 }
 
-impl AccessabilityLevel {
+impl AccessibilityLevel {
+    pub fn from_count(count: i32) -> Self {
+        if count > 0 {
+            Self::Normal
+        } else {
+            Self::None
+        }
+    }
+
+    pub fn from_bool(accessible: bool) -> Self {
+        if accessible {
+            Self::Normal
+        } else {
+            Self::None
+        }
+    }
+
     pub fn table(lua: &Lua) -> mlua::Result<Table> {
         lua.create_table_from([
             ("None", Self::None),
@@ -140,23 +156,23 @@ impl AccessabilityLevel {
     }
 }
 
-impl IntoLua for AccessabilityLevel {
+impl IntoLua for AccessibilityLevel {
     fn into_lua(self, _lua: &Lua) -> mlua::Result<mlua::Value> {
         Ok(Value::Integer(self as i32))
     }
 }
 
-impl IntoLua for &'_ AccessabilityLevel {
+impl IntoLua for &'_ AccessibilityLevel {
     fn into_lua(self, _lua: &Lua) -> mlua::Result<mlua::Value> {
         Ok(Value::Integer(*self as i32))
     }
 }
 
-impl FromLua for AccessabilityLevel {
+impl FromLua for AccessibilityLevel {
     fn from_lua(value: Value, _lua: &Lua) -> mlua::Result<Self> {
         value
             .as_i32()
-            .and_then(AccessabilityLevel::from_repr)
+            .and_then(AccessibilityLevel::from_repr)
             .ok_or_else(|| mlua::Error::runtime(format!("invalid accessibility level: {value:?}")))
     }
 }

@@ -4,14 +4,14 @@ use std::{fs, iter};
 use egui::ahash::HashMapExt;
 use eyre::{eyre, Context};
 use fnv::FnvHashMap;
-use mlua::{Lua, UserData, UserDataFields, UserDataMethods};
+use mlua::{Lua, UserData, UserDataFields, UserDataMethods, Value};
 use tracing::{debug, debug_span, error, instrument, warn};
 
 use crate::pack::api::tracker::flat::{Location, Section};
 use crate::pack::api::tracker::id::{AsId, Id};
 use crate::pack::api::tracker::nested::Map;
-use crate::pack::api::AccessabilityLevel;
-use crate::pack::rule::{Call, Rule};
+use crate::pack::api::AccessibilityLevel;
+use crate::pack::rule::{self, Call, Rule};
 use crate::pack::VariantUID;
 use crate::util::deserialize_hjson;
 
@@ -29,10 +29,11 @@ pub struct Tracker {
     locations: FnvHashMap<Id<Location>, Location>,
     items: Vec<StatefulItem>,
     variant_uid: VariantUID,
+    lua: Lua,
 }
 
 impl Tracker {
-    pub fn new(root: impl Into<PathBuf>, variant_uid: &VariantUID) -> Self {
+    pub fn new(root: impl Into<PathBuf>, variant_uid: &VariantUID, lua: Lua) -> Self {
         Self {
             next_id: Id::default(),
             root: root.into(),
@@ -40,6 +41,7 @@ impl Tracker {
             locations: FnvHashMap::new(),
             items: Vec::new(),
             variant_uid: variant_uid.clone(),
+            lua,
         }
     }
 
@@ -179,6 +181,143 @@ impl Tracker {
             parent,
             name: section.name,
             access_rules: section.access_rules,
+        }
+    }
+
+    pub fn location_parent(&self, location: &Location) -> Option<&Location> {
+        location
+            .parent
+            .as_ref()
+            .and_then(|parent| self.locations.get(parent))
+    }
+
+    pub fn location_accessibility_level(&self, location: &Location) -> AccessibilityLevel {
+        if let Some(parent) = self.location_parent(location) {
+            if self.location_accessibility_level(parent).is_none() {
+                return AccessibilityLevel::None;
+            }
+        }
+
+        let mut combiner = rule::OrCombiner::new();
+
+        for rule in &location.access_rules {
+            combiner.add(self.resolve_rule(rule));
+        }
+
+        combiner.finish()
+    }
+
+    pub fn section_accessibility_level(&self, section: &Section) -> AccessibilityLevel {
+        let Some(location) = self.locations.get(&section.parent) else {
+            error!("BUG: section parent does not exist");
+            return AccessibilityLevel::None;
+        };
+
+        if self.location_accessibility_level(location).is_none() {
+            return AccessibilityLevel::None;
+        }
+
+        let mut combiner = rule::OrCombiner::new();
+
+        for rule in &location.access_rules {
+            combiner.add(self.resolve_rule(rule));
+        }
+
+        combiner.finish()
+    }
+
+    pub fn resolve_rule(&self, access_rule: &Rule) -> AccessibilityLevel {
+        match access_rule {
+            Rule::Multi(rules) => {
+                let mut combiner = rule::AndCombiner::new();
+
+                for rule in rules {
+                    combiner.add(self.resolve_rule(rule));
+                }
+
+                combiner.finish()
+            }
+            Rule::Item(item_code) => {
+                let count = self.provider_count_for_item(item_code);
+                AccessibilityLevel::from_count(count)
+            }
+            Rule::Call(call) => {
+                let value = match call.exec::<Value>(&self.lua) {
+                    Ok(value) => value,
+                    Err(err) => {
+                        error!("failed to exec: {err}");
+                        return AccessibilityLevel::None;
+                    }
+                };
+
+                match value {
+                    Value::Integer(count) => AccessibilityLevel::from_count(count),
+                    Value::Boolean(accessible) => AccessibilityLevel::from_bool(accessible),
+                    Value::Number(count) => AccessibilityLevel::from_count(count as i32),
+                    _ => {
+                        error!("invalid lua rule value: {value:?}");
+                        AccessibilityLevel::None
+                    }
+                }
+            }
+            Rule::AccessibilityLevel(call) => {
+                let value = match call.exec::<Value>(&self.lua) {
+                    Ok(value) => value,
+                    Err(err) => {
+                        error!("failed to exec: {err}");
+                        return AccessibilityLevel::None;
+                    }
+                };
+
+                let level = match value {
+                    Value::Integer(level) => level,
+                    Value::Number(level) => level as i32,
+                    _ => {
+                        error!("invalid lua accessibility rule value: {value:?}");
+                        return AccessibilityLevel::None;
+                    }
+                };
+
+                match AccessibilityLevel::from_repr(level) {
+                    Some(level) => level,
+                    None => {
+                        error!("invalid AcessibilityLevel variant: {level}");
+                        AccessibilityLevel::Normal
+                    }
+                }
+            }
+            Rule::Reference(reference) => {
+                let Some(location) = self
+                    .locations
+                    .values()
+                    .find(|location| location.name == reference.location)
+                else {
+                    error!("location with name {:?} not found", reference.location);
+                    return AccessibilityLevel::None;
+                };
+
+                let Some(section) = location
+                    .sections
+                    .iter()
+                    .find(|section| section.name == reference.section)
+                else {
+                    error!(
+                        "section with name {:?} not found in location {:?}",
+                        reference.section, reference.location
+                    );
+                    return AccessibilityLevel::None;
+                };
+
+                self.section_accessibility_level(section)
+            }
+            Rule::Checkable(rule) => match self.resolve_rule(rule) {
+                AccessibilityLevel::None => AccessibilityLevel::None,
+                _ => AccessibilityLevel::Inspect,
+            },
+            Rule::Optional(rule) => match self.resolve_rule(rule) {
+                AccessibilityLevel::None => AccessibilityLevel::SequenceBreak,
+                accessibility => accessibility,
+            },
         }
     }
 }

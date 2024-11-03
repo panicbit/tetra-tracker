@@ -24,7 +24,7 @@ pub fn rule<'a>() -> impl Parser<'a, Rule> {
                 args,
             });
         let rule_call = just("$").ignore_then(call).map(Rule::Call);
-        let rule_accessibility_level = just("^$").ignore_then(call).map(Rule::AccessabilityLevel);
+        let rule_accessibility_level = just("^$").ignore_then(call).map(Rule::AccessibilityLevel);
 
         let reference = none_of("/")
             .repeated()
