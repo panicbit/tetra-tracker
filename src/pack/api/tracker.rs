@@ -5,6 +5,7 @@ use egui::ahash::HashMapExt;
 use eyre::{eyre, Context};
 use fnv::FnvHashMap;
 use mlua::{Lua, UserData, UserDataFields, UserDataMethods, Value};
+use parking_lot::Mutex;
 use tracing::{debug, debug_span, error, instrument, warn};
 
 use crate::pack::api::tracker::flat::{Location, Section};
@@ -27,6 +28,7 @@ pub struct Tracker {
     next_id: Id<()>,
     maps: Vec<Map>,
     locations: FnvHashMap<Id<Location>, Location>,
+    accessibility_level_cache: Mutex<FnvHashMap<Id<()>, AccessibilityLevel>>,
     items: Vec<StatefulItem>,
     variant_uid: VariantUID,
     // TODO: this strong reference creates a cycle
@@ -41,6 +43,7 @@ impl Tracker {
             root: root.into(),
             maps: Vec::new(),
             locations: FnvHashMap::new(),
+            accessibility_level_cache: Mutex::new(FnvHashMap::new()),
             items: Vec::new(),
             variant_uid: variant_uid.clone(),
             lua,
@@ -193,10 +196,58 @@ impl Tracker {
             .and_then(|parent| self.locations.get(parent))
     }
 
+    pub fn get_cached_location_accessibility_level(
+        &self,
+        location: &Location,
+    ) -> Option<AccessibilityLevel> {
+        self.accessibility_level_cache
+            .lock()
+            .get(&location.id.erased())
+            .copied()
+    }
+
+    pub fn cache_location_accessibility_level(
+        &self,
+        location: &Location,
+        level: AccessibilityLevel,
+    ) -> AccessibilityLevel {
+        self.accessibility_level_cache
+            .lock()
+            .insert(location.id.erased(), level);
+
+        level
+    }
+
+    pub fn get_cached_section_accessibility_level(
+        &self,
+        section: &Section,
+    ) -> Option<AccessibilityLevel> {
+        self.accessibility_level_cache
+            .lock()
+            .get(&section.id.erased())
+            .copied()
+    }
+
+    pub fn cache_section_accessibility_level(
+        &self,
+        section: &Section,
+        level: AccessibilityLevel,
+    ) -> AccessibilityLevel {
+        self.accessibility_level_cache
+            .lock()
+            .insert(section.id.erased(), level);
+
+        level
+    }
+
     pub fn location_accessibility_level(&self, location: &Location) -> AccessibilityLevel {
+        if let Some(level) = self.get_cached_location_accessibility_level(location) {
+            return level;
+        }
+
         if let Some(parent) = self.location_parent(location) {
             if self.location_accessibility_level(parent).is_none() {
-                return AccessibilityLevel::None;
+                return self.cache_location_accessibility_level(location, AccessibilityLevel::None);
             }
         }
 
@@ -206,17 +257,23 @@ impl Tracker {
             combiner.add(self.resolve_rule(rule));
         }
 
-        combiner.finish()
+        let level = combiner.finish();
+
+        self.cache_location_accessibility_level(location, level)
     }
 
     pub fn section_accessibility_level(&self, section: &Section) -> AccessibilityLevel {
+        if let Some(level) = self.get_cached_section_accessibility_level(section) {
+            return level;
+        }
+
         let Some(location) = self.locations.get(&section.parent) else {
             error!("BUG: section parent does not exist");
             return AccessibilityLevel::None;
         };
 
         if self.location_accessibility_level(location).is_none() {
-            return AccessibilityLevel::None;
+            return self.cache_section_accessibility_level(section, AccessibilityLevel::None);
         }
 
         let mut combiner = rule::OrCombiner::new();
@@ -225,7 +282,9 @@ impl Tracker {
             combiner.add(self.resolve_rule(rule));
         }
 
-        combiner.finish()
+        let level = combiner.finish();
+
+        self.cache_section_accessibility_level(section, level)
     }
 
     pub fn resolve_rule(&self, access_rule: &Rule) -> AccessibilityLevel {

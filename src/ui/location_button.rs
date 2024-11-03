@@ -5,7 +5,7 @@ use tracing::trace;
 use crate::pack::api::tracker::flat::Location;
 use crate::pack::api::tracker::nested::MapLocation;
 use crate::pack::api::{AccessibilityLevel, Tracker};
-use crate::ui::{color_for_accessibility_level, LocationPopup};
+use crate::ui::LocationPopup;
 
 pub struct LocationButton<'a> {
     popup_id: egui::Id,
