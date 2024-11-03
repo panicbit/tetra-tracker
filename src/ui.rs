@@ -23,7 +23,7 @@ fn color_for_accessibility_level(level: &AccessibilityLevel) -> Color32 {
     match level {
         AccessibilityLevel::None => Color32::RED,
         AccessibilityLevel::Partial => Color32::ORANGE,
-        AccessibilityLevel::Inspect => Color32::BLUE,
+        AccessibilityLevel::Inspect => Color32::from_rgb(47, 118, 221),
         AccessibilityLevel::SequenceBreak => Color32::YELLOW,
         AccessibilityLevel::Normal => Color32::GREEN,
         AccessibilityLevel::Cleared => Color32::DARK_GRAY,
