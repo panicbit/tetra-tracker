@@ -73,7 +73,29 @@ impl StatefulItem {
 
                 *count
             }
-            StatefulItemVariant::ProgressiveToggle { item: _ } => todo!(),
+            StatefulItemVariant::ProgressiveToggle {
+                item,
+                active_stage_index,
+            } => {
+                let Some(stages_to_check) = item.stages.get(*active_stage_index..) else {
+                    error!("active stage index out of bounds");
+                    return 0;
+                };
+
+                for stage in stages_to_check {
+                    let stage_matches = stage.codes.contains(item_code);
+
+                    if stage_matches {
+                        return 1;
+                    }
+
+                    if !stage.inherit_codes {
+                        break;
+                    }
+                }
+
+                0
+            }
             StatefulItemVariant::CompositeToggle { item, left, right } => {
                 let mut left_count = 0;
                 let mut right_count = 0;
@@ -133,6 +155,7 @@ pub enum StatefulItemVariant {
     },
     ProgressiveToggle {
         item: ProgressiveToggle,
+        active_stage_index: usize,
     },
     CompositeToggle {
         item: CompositeToggle,
@@ -162,7 +185,10 @@ impl StatefulItemVariant {
                 count: item.initial_quantity,
                 item,
             },
-            item::Variant::ProgressiveToggle(item) => Self::ProgressiveToggle { item },
+            item::Variant::ProgressiveToggle(item) => Self::ProgressiveToggle {
+                active_stage_index: item.initial_stage_idx,
+                item,
+            },
             item::Variant::CompositeToggle(item) => Self::CompositeToggle {
                 item,
                 left: false,
